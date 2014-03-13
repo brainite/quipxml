@@ -1,0 +1,49 @@
+<example>
+	<original>
+		<list>
+			<item>one</item>
+			<item>two</item>
+			<item class="target">three</item>
+			<item>four</item>
+			<item>five</item>
+		</list>
+	</original>
+
+	<arg id="new-content">
+		<item>new content</item>
+	</arg>
+
+	<output method="after">
+		<list>
+			<item>one</item>
+			<item>two</item>
+			<item class="target">three</item>
+			<item>new content</item>
+			<item>four</item>
+			<item>five</item>
+		</list>
+	</output>
+	
+	<output method="before">
+		<list>
+			<item>one</item>
+			<item>two</item>
+			<item>new content</item>
+			<item class="target">three</item>
+			<item>four</item>
+			<item>five</item>
+		</list>
+	</output>
+	
+	<output method="before-after">
+		<list>
+			<item>one</item>
+			<item>two</item>
+			<item>new content</item>
+			<item class="target">three</item>
+			<item>new content</item>
+			<item>four</item>
+			<item>five</item>
+		</list>
+	</output>
+</example>
