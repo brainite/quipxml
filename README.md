@@ -5,6 +5,8 @@ QuipXml
 
 QuipXml is chainable PHP objects for manipulating XML modeled after jQuery.
 
+**Although this is being developed with unit tests, this is still alpha. Method names may be subject to change.**
+
 Basic Usage
 -----------
 
