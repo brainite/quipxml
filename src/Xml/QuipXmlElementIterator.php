@@ -97,8 +97,8 @@ class QuipXmlElementIterator extends \IteratorIterator {
     return $this->_eachGetIterator('parent_');
   }
 
-  public function prev() {
-    return $this->_eachGetIterator('prev');
+  public function prev_() {
+    return $this->_eachGetIterator('prev_');
   }
 
 }

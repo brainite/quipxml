@@ -33,6 +33,11 @@ class QuipXmlElement extends \SimpleXMLElement {
     return $new;
   }
 
+  /**
+   * Add the content before this node.
+   * @param mixed $content
+   * @return \QuipXml\Xml\QuipXmlElement
+   */
   public function before($content) {
     $me = $this->get();
     $parent = $this->parent_()->get();
@@ -41,16 +46,31 @@ class QuipXmlElement extends \SimpleXMLElement {
     return $this;
   }
 
+  /**
+   * Add the content after this node.
+   * @param mixed $content
+   * @return \QuipXml\Xml\QuipXmlElement
+   */
   public function after($content) {
     $this->before($content);
-    $this->prev()->before($this);
+    $this->prev_()->before($this);
     return $this;
   }
 
+  /**
+   * Add the content before this node.
+   * @param int $index
+   * @return \QuipXml\Xml\QuipXmlElement
+   */
   public function eq($index = 0) {
     return $this;
   }
 
+  /**
+   * Get the DOM object associated with this node.
+   * @param int $index
+   * @return DOMElement|FALSE
+   */
   public function get($index = 0) {
     if ($index == 0) {
       $dom = dom_import_simplexml($this);
@@ -92,6 +112,10 @@ class QuipXmlElement extends \SimpleXMLElement {
     return $this;
   }
 
+  /**
+   * Get the parent node or an empty iterator.
+   * @return \QuipXml\Xml\QuipXmlElement
+   */
   public function parent_() {
     return $this->xpath('..');
     $p =& parent::xpath('..');
@@ -101,10 +125,19 @@ class QuipXmlElement extends \SimpleXMLElement {
     return new QuipXmlElementIterator(new \EmptyIterator());
   }
 
-  public function prev() {
+  /**
+   * Get the preceding sibling for this node
+   * @return \QuipXml\Xml\QuipXmlElementIterator
+   */
+  public function prev_() {
     return $this->xpath("preceding-sibling::*[1]");
   }
 
+  /**
+   * Wrap the xpath results in a Quip iterator.
+   * @see SimpleXMLElement::xpath()
+   * @return \QuipXml\Xml\QuipXmlElementIterator
+   */
   public function xpath($path) {
     return new QuipXmlElementIterator(new \ArrayIterator(parent::xpath($path)));
   }
