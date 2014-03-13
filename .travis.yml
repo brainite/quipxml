@@ -3,7 +3,6 @@ php:
   - 5.5
   - 5.4
   - 5.3
-  - hhvm
 
 before_install:
   - wget http://getcomposer.org/composer.phar; chmod +x composer.phar; ./composer.phar install
