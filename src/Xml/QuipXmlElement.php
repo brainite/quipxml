@@ -25,16 +25,17 @@ class QuipXmlElement extends \SimpleXMLElement {
     else {
       throw new \InvalidArgumentException("Unknown type of content.");
     }
-    $me = dom_import_simplexml($this);
+    $me = $this->get();
     if ($new->ownerDocument !== $me->ownerDocument) {
-      $new = $me->ownerDocument->importNode($new->cloneNode(TRUE), TRUE);
+      $clone = $new->cloneNode(TRUE);
+      $new = $me->ownerDocument->importNode($clone, TRUE);
     }
     return $new;
   }
 
   public function before($content) {
-    $me = dom_import_simplexml($this);
-    $parent = dom_import_simplexml($this->parent_());
+    $me = $this->get();
+    $parent = $this->parent_()->get();
     $new = $this->_contentToDom($content);
     $parent->insertBefore($new, $me);
     return $this;
@@ -48,6 +49,14 @@ class QuipXmlElement extends \SimpleXMLElement {
 
   public function eq($index = 0) {
     return $this;
+  }
+
+  public function get($index = 0) {
+    if ($index == 0) {
+      $dom = dom_import_simplexml($this);
+      return $dom;
+    }
+    return FALSE;
   }
 
   /**
@@ -84,6 +93,7 @@ class QuipXmlElement extends \SimpleXMLElement {
   }
 
   public function parent_() {
+    return $this->xpath('..');
     $p =& parent::xpath('..');
     if (sizeof($p)) {
       return $p[0];

@@ -52,11 +52,25 @@ class QuipXmlElementIterator extends \IteratorIterator {
   }
 
   public function eq($index = 0) {
-    $this->seek($index);
+    $this->rewind();
+    for ($i = 0; $i < $index; ++$i) {
+      if (!$this->valid()) {
+        return new QuipXmlElementIterator(new \EmptyIterator());
+      }
+      $this->next();
+    }
     if ($this->valid()) {
       return $this->current();
     }
     return new QuipXmlElementIterator(new \EmptyIterator());
+  }
+
+  public function get($index = 0) {
+    $eq = $this->eq($index);
+    if ($eq instanceof self) {
+      return FALSE;
+    }
+    return $eq->get();
   }
 
   public function html($content = NULL) {
