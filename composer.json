@@ -1,0 +1,25 @@
+{
+    "name":"wittiws/quipxml",
+    "type":"library",
+    "description":"Pre-alpha",
+    "keywords":[
+        "xml"
+    ],
+    "homepage":"https://github.com/wittiws/quipxml",
+    "license":"MIT",
+    "authors":[
+        {
+            "name":"Greg Payne",
+            "homepage":"http://www.witti.ws/",
+            "role":"Packager"
+        }
+    ],
+    "require":{
+        "php":">=5.3.3"
+    },
+    "autoload":{
+        "psr-4":{
+            "PhpQuery\\": "src/"
+        }
+    }
+}
