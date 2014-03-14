@@ -44,9 +44,9 @@ class QuipXmlElement extends \SimpleXMLElement {
    * @return \QuipXml\Xml\QuipXmlElement
    */
   public function before($content) {
-//     if (!$this) {
-//       return $this;
-//     }
+    if (FALSE === (bool) $this) {
+      return $this;
+    }
     $me = $this->get();
     $parent = $this->parent_()->get();
     $new = $this->_contentToDom($content);
@@ -60,9 +60,9 @@ class QuipXmlElement extends \SimpleXMLElement {
    * @return \QuipXml\Xml\QuipXmlElement
    */
   public function after($content) {
-//     if (!$this) {
-//       return $this;
-//     }
+    if (FALSE === (bool) $this) {
+      return $this;
+    }
     $this->before($content);
     $this->prev_()->before($this);
     return $this;
