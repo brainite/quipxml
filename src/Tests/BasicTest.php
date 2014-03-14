@@ -94,4 +94,35 @@ class BasicTest extends \PHPUnit_Framework_TestCase {
     $this->assertEmpty($test4);
   }
 
+  public function testSurviveEmpty() {
+    $quip = Quip::load(__DIR__ . '/Resources/XmlBasicList.xml', 0, TRUE);
+
+    foreach ($quip->notfoundanywhere as $a) {
+      $this->assertTrue(FALSE, 'SimpleXml skips foreach when not found');
+    }
+
+    foreach ($quip->xpath('//notfoundanywhere') as $a) {
+      $this->assertTrue(FALSE, 'Quip skips foreach when not found');
+    }
+
+    foreach ($quip->xpath('//notfoundanywhere')->xpath('//original')->notfoundanywhere as $a) {
+      $this->assertTrue(FALSE, 'Quip skips foreach when not found');
+    }
+
+    $missing = $quip->notfoundanywhere;
+    $this->assertFalse((bool) $missing, 'SimpleXml element not found');
+    $found = $missing->xpath('//original');
+    $this->assertTrue((bool) $found, 'SimpleXml reference survives');
+
+    $missing = $quip->xpath('//notfoundanywhere');
+    $this->assertFalse((bool) $missing, 'SimpleXml element not found by xpath');
+    $found = $missing->xpath('//original');
+    $this->assertTrue((bool) $found, 'SimpleXml reference survives');
+
+    $missing = $quip->xpath('//notfoundanywhere')->xpath('//stillnotfound');
+    $this->assertFalse((bool) $missing, 'SimpleXml element not found by iterator xpath');
+    $found = $missing->xpath('//original');
+    $this->assertTrue((bool) $found, 'SimpleXml reference survives');
+  }
+
 }

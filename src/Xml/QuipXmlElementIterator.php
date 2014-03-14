@@ -9,7 +9,6 @@
  */
 
 namespace QuipXml\Xml;
-
 class QuipXmlElementIterator extends \IteratorIterator {
   public function __get($name) {
     $arr = array();
@@ -43,7 +42,10 @@ class QuipXmlElementIterator extends \IteratorIterator {
     if (!empty($arr)) {
       $it->append(new \ArrayIterator($arr));
     }
-    return new QuipXmlElementIterator($it);
+    if ($it->valid()) {
+      return new QuipXmlElementIterator($it);
+    }
+    return $this->{'no results'};
   }
 
   protected function _eachSetter($method, $arg1, $arg2 = NULL, $arg3 = NULL) {
@@ -51,6 +53,13 @@ class QuipXmlElementIterator extends \IteratorIterator {
       $el->$method($arg1, $arg2, $arg3);
     }
     return $this;
+  }
+
+  protected function _getEmptyElement() {
+    foreach ($this as $el) {
+      $results = $el->xpath('/*');
+      return $results[0]->{uniqid('empty element')};
+    }
   }
 
   protected function _singleGetter($method, $arg1 = NULL) {
@@ -72,14 +81,14 @@ class QuipXmlElementIterator extends \IteratorIterator {
     $this->rewind();
     for ($i = 0; $i < $index; ++$i) {
       if (!$this->valid()) {
-        return new QuipXmlElementIterator(new \EmptyIterator());
+        return $this->_getEmptyElement();
       }
       $this->next();
     }
     if ($this->valid()) {
       return $this->current();
     }
-    return new QuipXmlElementIterator(new \EmptyIterator());
+    return $this->_getEmptyElement();
   }
 
   public function get($index = 0) {
@@ -119,12 +128,12 @@ class QuipXmlElementIterator extends \IteratorIterator {
   }
 
   public function xpath($path) {
-    if (substr($path, 0, 2) === '//') {
+    if ($path{0} === '/') {
       $this->rewind();
       if ($this->valid()) {
         return $this->current()->xpath($path);
       }
-      return new QuipXmlElementIterator(new \EmptyIterator());
+      return $this->_getEmptyElement();
     }
 
     return $this->_eachGetIterator('xpath', $path);

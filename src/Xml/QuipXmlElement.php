@@ -33,12 +33,20 @@ class QuipXmlElement extends \SimpleXMLElement {
     return $new;
   }
 
+  protected function _getEmptyElement() {
+    $results = parent::xpath('/*');
+    return $results[0]->{uniqid('empty element')};
+  }
+
   /**
    * Add the content before this node.
    * @param mixed $content
    * @return \QuipXml\Xml\QuipXmlElement
    */
   public function before($content) {
+    if (!$this) {
+      return $this;
+    }
     $me = $this->get();
     $parent = $this->parent_()->get();
     $new = $this->_contentToDom($content);
@@ -52,6 +60,9 @@ class QuipXmlElement extends \SimpleXMLElement {
    * @return \QuipXml\Xml\QuipXmlElement
    */
   public function after($content) {
+    if (!$this) {
+      return $this;
+    }
     $this->before($content);
     $this->prev_()->before($this);
     return $this;
@@ -122,7 +133,7 @@ class QuipXmlElement extends \SimpleXMLElement {
     if (sizeof($p)) {
       return $p[0];
     }
-    return new QuipXmlElementIterator(new \EmptyIterator());
+    return $this->_getEmptyElement();
   }
 
   /**
@@ -139,7 +150,11 @@ class QuipXmlElement extends \SimpleXMLElement {
    * @return \QuipXml\Xml\QuipXmlElementIterator
    */
   public function xpath($path) {
-    return new QuipXmlElementIterator(new \ArrayIterator(parent::xpath($path)));
+    $results = parent::xpath($path);
+    if (empty($results)) {
+      return $this->_getEmptyElement();
+    }
+    return new QuipXmlElementIterator(new \ArrayIterator($results));
   }
 
 }
