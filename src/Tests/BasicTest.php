@@ -46,4 +46,18 @@ class BasicTest extends \PHPUnit_Framework_TestCase {
     $this->assertEquals($expected, $actual);
   }
 
+  public function testSetNewChild() {
+    $quip = Quip::load(__DIR__ . '/Resources/XmlBasicList.xml', 0, TRUE);
+    $orig = $quip->xpath('//original')->eq();
+    $orig->x = 1;
+    $expected = $orig->html($this->formatter);
+
+    $quip = Quip::load(__DIR__ . '/Resources/XmlBasicList.xml', 0, TRUE);
+    $orig = $quip->xpath('//original');
+    $orig->x = 1;
+    $actual = $orig->html($this->formatter);
+
+    $this->assertEquals($expected, $actual);
+  }
+
 }

@@ -11,6 +11,23 @@
 namespace QuipXml\Xml;
 
 class QuipXmlElementIterator extends \IteratorIterator {
+  public function __get($name) {
+    $arr = array();
+    foreach ($this as $el) {
+      $arr[] = $el->$name;
+    }
+    if (sizeof($arr) == 1) {
+      return $arr[0];
+    }
+    return new QuipXmlElementIterator(new \ArrayIterator($arr));
+  }
+
+  public function __set($name, $value) {
+    foreach ($this as $el) {
+      $el->$name = $value;
+    }
+  }
+
   protected function _eachGetIterator($method, $arg1 = NULL, $arg2 = NULL, $arg3 = NULL) {
     $it = new \AppendIterator();
     $arr = array();
