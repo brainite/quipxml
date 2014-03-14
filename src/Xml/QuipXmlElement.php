@@ -63,8 +63,15 @@ class QuipXmlElement extends \SimpleXMLElement {
     if (FALSE === (bool) $this) {
       return $this;
     }
-    $this->before($content);
-    $this->prev_()->before($this);
+    $me = $this->get();
+    $parent = $this->parent_()->get();
+    $new = $this->_contentToDom($content);
+    if (isset($me->nextSibling)) {
+      $parent->insertBefore($new, $me->nextSibling);
+    }
+    else {
+      $parent->appendChild($new);
+    }
     return $this;
   }
 
