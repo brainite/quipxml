@@ -123,6 +123,14 @@ class BasicTest extends \PHPUnit_Framework_TestCase {
     $this->assertFalse((bool) $missing, 'SimpleXml element not found by iterator xpath');
     $found = $missing->xpath('//original');
     $this->assertTrue((bool) $found, 'SimpleXml reference survives');
+
+    $expected = $quip->html($this->formatter);
+    $quip->notfoundanywhere->after('<div/>')->before('<div/>');
+    $actual = $quip->html($this->formatter);
+    $this->assertEquals($expected, $actual);
+    $quip->xpath('//notfoundanywhere')->after('<div/>')->before('<div/>');
+    $actual = $quip->html($this->formatter);
+    $this->assertEquals($expected, $actual);
   }
 
 }
