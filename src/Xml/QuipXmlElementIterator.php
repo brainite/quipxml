@@ -118,4 +118,16 @@ class QuipXmlElementIterator extends \IteratorIterator {
     return $this->_eachGetIterator('prev_');
   }
 
+  public function xpath($path) {
+    if (substr($path, 0, 2) === '//') {
+      $this->rewind();
+      if ($this->valid()) {
+        return $this->current()->xpath($path);
+      }
+      return new QuipXmlElementIterator(new \EmptyIterator());
+    }
+
+    return $this->_eachGetIterator('xpath', $path);
+  }
+
 }

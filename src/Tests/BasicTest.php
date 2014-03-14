@@ -60,4 +60,38 @@ class BasicTest extends \PHPUnit_Framework_TestCase {
     $this->assertEquals($expected, $actual);
   }
 
+  public function testMixTraversal() {
+    $quip = Quip::load(__DIR__ . '/Resources/XmlBasicList.xml', 0, TRUE);
+    $expected = array(
+      'one',
+      'two',
+      'three',
+      'four',
+      'five',
+    );
+    $test1 = $expected;
+    foreach ($quip->xpath('//original/list')->item as $item) {
+      $this->assertEquals(array_shift($test1), trim($item));
+    }
+    $this->assertEmpty($test1);
+
+    $test2 = $expected;
+    foreach ($quip->original->xpath('./list')->item as $item) {
+      $this->assertEquals(array_shift($test2), trim($item));
+    }
+    $this->assertEmpty($test2);
+
+    $test3 = $expected;
+    foreach ($quip->xpath('//original')->xpath('./list')->item as $item) {
+      $this->assertEquals(array_shift($test3), trim($item));
+    }
+    $this->assertEmpty($test3);
+
+    $test4 = $expected;
+    foreach ($quip->xpath('//original')->list->xpath('./item') as $item) {
+      $this->assertEquals(array_shift($test4), trim($item));
+    }
+    $this->assertEmpty($test4);
+  }
+
 }
