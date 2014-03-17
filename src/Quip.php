@@ -19,6 +19,11 @@ class Quip {
 
   static public function load($source, $options = 0, $data_is_url = FALSE, $ns = '', $is_prefix = FALSE) {
     try {
+      if ($source instanceof \SimpleXMLElement) {
+        $dom = dom_import_simplexml($source);
+        return simplexml_import_dom($dom, '\\QuipXml\\Xml\\QuipXmlElement');
+      }
+
       $quip = new QuipXmlElement($source, $options, $data_is_url, $ns, $is_prefix);
     } catch (\Exception $e) {
       $data = $data_is_url ? file_get_contents($source) : $source;
