@@ -10,6 +10,20 @@
 
 namespace QuipXml\Xml;
 class QuipXmlElementIterator extends \IteratorIterator {
+  public function __construct($iterator) {
+    $arr = array();
+    foreach ($iterator as $v) {
+      foreach ($arr as $other) {
+        if ($v->dom()->isSameNode($other->dom())) {
+          continue(2);
+        }
+      }
+      $arr[] = $v;
+    }
+    $it = new \ArrayIterator($arr);
+    parent::__construct($it);
+  }
+
   public function __get($name) {
     $arr = array();
     foreach ($this as $el) {
@@ -48,7 +62,7 @@ class QuipXmlElementIterator extends \IteratorIterator {
     return $this->{'no results'};
   }
 
-  protected function _eachSetter($method, $arg1, $arg2 = NULL, $arg3 = NULL) {
+  protected function _eachSetter($method, $arg1 = NULL, $arg2 = NULL, $arg3 = NULL) {
     foreach ($this as $el) {
       $el->$method($arg1, $arg2, $arg3);
     }
@@ -117,6 +131,18 @@ class QuipXmlElementIterator extends \IteratorIterator {
       return $this->_eachSetter('htmlOuter', $content);
     }
     return $this->_singleGetter('htmlOuter');
+  }
+
+  public function unwrap() {
+    return $this->_eachSetter('unwrap');
+  }
+
+  public function wrap($content) {
+    return $this->_eachSetter('wrap', $content);
+  }
+
+  public function wrapInner($content) {
+    return $this->_eachSetter('wrapInner', $content);
   }
 
   public function xparent() {

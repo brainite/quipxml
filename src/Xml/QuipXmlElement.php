@@ -12,15 +12,26 @@ namespace QuipXml\Xml;
 
 use QuipXml\Quip;
 class QuipXmlElement extends \SimpleXMLElement {
-  protected function _contentToDom($content) {
+  protected function _contentToDom($content, $return_parent = FALSE) {
     if ($content instanceof \SimpleXMLElement) {
       $new = dom_import_simplexml($content);
+      if ($return_parent) {
+        $new = $new->parentNode;
+      }
     }
     elseif ($content instanceof \DOMNode) {
       $new = $content;
+      if ($return_parent) {
+        $new = $new->parentNode;
+      }
     }
     elseif (is_string($content)) {
-      $new = clone dom_import_simplexml(Quip::load($content));
+      if ($return_parent) {
+        $new = clone dom_import_simplexml(Quip::load("<root>$content</root>"));
+      }
+      else {
+        $new = clone dom_import_simplexml(Quip::load($content));
+      }
     }
     else {
       throw new \InvalidArgumentException("Unknown type of content.");
@@ -90,7 +101,7 @@ class QuipXmlElement extends \SimpleXMLElement {
    * @return DOMElement|FALSE
    */
   public function dom($index = 0) {
-    if ($index == 0) {
+    if ($index == 0 && $this) {
       $dom = dom_import_simplexml($this);
       return $dom;
     }
@@ -117,6 +128,16 @@ class QuipXmlElement extends \SimpleXMLElement {
     elseif ($content instanceof QuipXmlFormatter) {
       return $content->getFormattedInner($this);
     }
+    else {
+      $new = $this->_contentToDom($content, TRUE);
+      $me = $this->dom();
+      while ($me->childNodes->length != 0) {
+        $me->removeChild($me->childNodes->item(0));
+      }
+      foreach ($new->childNodes as $child) {
+        $me->appendChild($child->cloneNode(TRUE));
+      }
+    }
     return $this;
   }
 
@@ -127,6 +148,38 @@ class QuipXmlElement extends \SimpleXMLElement {
     elseif ($content instanceof QuipXmlFormatter) {
       return $content->getFormattedOuter($this);
     }
+    return $this;
+  }
+
+  public function unwrap() {
+    $parent = $this->xparent()->dom();
+    if (!$parent) {
+      return $this->_getEmptyElement();
+    }
+    foreach ($parent->childNodes as $child) {
+      $parent->parentNode->insertBefore($child->cloneNode(TRUE), $parent);
+    }
+    $parent->parentNode->removeChild($parent);
+    return $this;
+  }
+
+  public function wrap($content) {
+    $me = $this->dom();
+    $parent = $me->parentNode;
+    $new = $this->_contentToDom($content);
+    $wrapper = $parent->insertBefore($new, $me);
+    $wrapper->appendChild($me);
+    return $this;
+  }
+
+  public function wrapInner($content) {
+    $me = $this->dom();
+    $new = $this->_contentToDom($content);
+    while ($me->childNodes->length != 0) {
+      $c = $me->childNodes->item(0);
+      $new->appendChild($c);
+    }
+    $child = $me->appendChild($new);
     return $this;
   }
 

@@ -28,7 +28,12 @@ class Quip {
     } catch (\Exception $e) {
       $data = $data_is_url ? file_get_contents($source) : $source;
       $dom = new \DOMDocument();
-      $dom->loadHTML($data, $options);
+      if (version_compare(PHP_VERSION, '5.4.0') >= 0) {
+        $dom->loadHTML($data, $options);
+      }
+      else {
+        $dom->loadHTML($data);
+      }
       $quip = simplexml_import_dom($dom, '\\QuipXml\\Xml\\QuipXmlElement');
     }
     return $quip;

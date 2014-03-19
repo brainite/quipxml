@@ -46,4 +46,14 @@
 			<item>five</item>
 		</list>
 	</output>
+	
+	<output method="list-newlist">
+		<newlist>
+			<item>one</item>
+			<item>two</item>
+			<item class="target">three</item>
+			<item>four</item>
+			<item>five</item>
+		</newlist>
+	</output>
 </example>

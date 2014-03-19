@@ -144,4 +144,27 @@ class BasicTest extends \PHPUnit_Framework_TestCase {
     $this->assertEquals($expected, $actual);
   }
 
+  public function testWrapUnwrap() {
+    $quip = Quip::load(__DIR__ . '/Resources/XmlBasicList.xml', 0, TRUE);
+    $expected = $quip->xpath("//output[@method = 'list-newlist']")->html($this->formatter);
+
+    $quip = Quip::load(__DIR__ . '/Resources/XmlBasicList.xml', 0, TRUE);
+    $tgt = $quip->xpath("//original//item[@class = 'target']");
+    $tgt->xparent()->wrap('<newlist/>');
+    $tgt->unwrap();
+    $actual = $quip->original->html($this->formatter);
+    $this->assertEquals($expected, $actual);
+
+    $quip = Quip::load(__DIR__ . '/Resources/XmlBasicList.xml', 0, TRUE);
+    $quip->original->wrapInner('<newlist />');
+    $quip->original->newlist->html($quip->xpath("//original//list")->html());
+    $actual = $quip->original->html($this->formatter);
+    $this->assertEquals($expected, $actual);
+
+    $quip = Quip::load(__DIR__ . '/Resources/XmlBasicList.xml', 0, TRUE);
+    $list = $quip->xpath("//original//item")->xparent()->wrapInner('<newlist />')->xpath("./*[1]")->unwrap();
+    $actual = $quip->original->html($this->formatter);
+    $this->assertEquals($expected, $actual);
+  }
+
 }
