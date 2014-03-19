@@ -31,5 +31,5 @@ foreach ($quip->xpath("//li")->eq(1) as $li) {
 }
 
 // For advanced operations, just like in jQuery, you can access the DOMNode for a given XML node.
-$el = $ul->get();
+$el = $ul->dom();
 ````
