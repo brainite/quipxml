@@ -19,7 +19,7 @@ $quip = Quip::load($xml_string);
 $html = $quip->html();
 
 // jQuery method names are adjusted when there is a keyword conflict.
-$quip->parent_();
+$quip->xparent();
     
 // While jQuery syntax is wonderful, you also get PHP advantages:
 //  1. xpath

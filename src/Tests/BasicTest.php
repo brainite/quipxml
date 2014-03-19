@@ -21,27 +21,27 @@ class BasicTest extends \PHPUnit_Framework_TestCase {
   public function testXmlBasicList() {
     $formatter = $this->formatter;
 
-    // Test after, parent_, html and htmlOuter
+    // Test after, xparent, html and htmlOuter
     $quip = Quip::load(__DIR__ . '/Resources/XmlBasicList.xml', 0, TRUE);
     $add = $quip->xpath("//arg[@id = 'new-content']")->html();
     $tgt = $quip->xpath("//original//item[@class = 'target']");
-    $actual = $tgt->after($add)->parent_()->htmlOuter($formatter);
+    $actual = $tgt->after($add)->xparent()->htmlOuter($formatter);
     $expected = $quip->xpath("//output[@method = 'after']")->html($formatter);
     $this->assertEquals($expected, $actual);
 
-    // Test before, parent_, html and htmlOuter
+    // Test before, xparent, html and htmlOuter
     $quip = Quip::load(__DIR__ . '/Resources/XmlBasicList.xml', 0, TRUE);
     $add = $quip->xpath("//arg[@id = 'new-content']")->html();
     $tgt = $quip->xpath("//original//item[@class = 'target']");
-    $actual = $tgt->before($add)->parent_()->htmlOuter($formatter);
+    $actual = $tgt->before($add)->xparent()->htmlOuter($formatter);
     $expected = $quip->xpath("//output[@method = 'before']")->html($formatter);
     $this->assertEquals($expected, $actual);
 
-    // Test SimpleXml traversal, before, parent_, html and htmlOuter
+    // Test SimpleXml traversal, before, xparent, html and htmlOuter
     $quip = Quip::load(__DIR__ . '/Resources/XmlBasicList.xml', 0, TRUE);
     $add = $quip->xpath("//arg[@id = 'new-content']")->html();
     $tgt = $quip->original->list->xpath("./item[@class = 'target']");
-    $actual = $tgt->before($add)->after($add)->parent_()->htmlOuter($formatter);
+    $actual = $tgt->before($add)->after($add)->xparent()->htmlOuter($formatter);
     $expected = $quip->xpath("//output[@method = 'before-after']")->html($formatter);
     $this->assertEquals($expected, $actual);
   }

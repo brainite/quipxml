@@ -91,12 +91,12 @@ class QuipXmlElementIterator extends \IteratorIterator {
     return $this->_getEmptyElement();
   }
 
-  public function get($index = 0) {
+  public function dom($index = 0) {
     $eq = $this->eq($index);
     if ($eq instanceof self) {
       return FALSE;
     }
-    return $eq->get();
+    return $eq->dom();
   }
 
   public function html($content = NULL) {
@@ -119,12 +119,12 @@ class QuipXmlElementIterator extends \IteratorIterator {
     return $this->_singleGetter('htmlOuter');
   }
 
-  public function parent_() {
-    return $this->_eachGetIterator('parent_');
+  public function xparent() {
+    return $this->_eachGetIterator('xparent');
   }
 
-  public function prev_() {
-    return $this->_eachGetIterator('prev_');
+  public function xprev() {
+    return $this->_eachGetIterator('xprev');
   }
 
   public function xpath($path) {

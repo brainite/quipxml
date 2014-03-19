@@ -25,7 +25,7 @@ class QuipXmlElement extends \SimpleXMLElement {
     else {
       throw new \InvalidArgumentException("Unknown type of content.");
     }
-    $me = $this->get();
+    $me = $this->dom();
     if ($new->ownerDocument !== $me->ownerDocument) {
       $clone = $new->cloneNode(TRUE);
       $new = $me->ownerDocument->importNode($clone, TRUE);
@@ -47,8 +47,8 @@ class QuipXmlElement extends \SimpleXMLElement {
     if (FALSE === (bool) $this) {
       return $this;
     }
-    $me = $this->get();
-    $parent = $this->parent_()->get();
+    $me = $this->dom();
+    $parent = $this->xparent()->dom();
     $new = $this->_contentToDom($content);
     $parent->insertBefore($new, $me);
     return $this;
@@ -63,8 +63,8 @@ class QuipXmlElement extends \SimpleXMLElement {
     if (FALSE === (bool) $this) {
       return $this;
     }
-    $me = $this->get();
-    $parent = $this->parent_()->get();
+    $me = $this->dom();
+    $parent = $this->xparent()->dom();
     $new = $this->_contentToDom($content);
     if (isset($me->nextSibling)) {
       $parent->insertBefore($new, $me->nextSibling);
@@ -89,7 +89,7 @@ class QuipXmlElement extends \SimpleXMLElement {
    * @param int $index
    * @return DOMElement|FALSE
    */
-  public function get($index = 0) {
+  public function dom($index = 0) {
     if ($index == 0) {
       $dom = dom_import_simplexml($this);
       return $dom;
@@ -134,7 +134,7 @@ class QuipXmlElement extends \SimpleXMLElement {
    * Get the parent node or an empty iterator.
    * @return \QuipXml\Xml\QuipXmlElement
    */
-  public function parent_() {
+  public function xparent() {
     return $this->xpath('..');
     $p =& parent::xpath('..');
     if (sizeof($p)) {
@@ -147,7 +147,7 @@ class QuipXmlElement extends \SimpleXMLElement {
    * Get the preceding sibling for this node
    * @return \QuipXml\Xml\QuipXmlElementIterator
    */
-  public function prev_() {
+  public function xprev() {
     return $this->xpath("preceding-sibling::*[1]");
   }
 
