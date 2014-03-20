@@ -12,13 +12,19 @@ namespace QuipXml\Xml;
 class QuipXmlElementIterator extends \IteratorIterator {
   public function __construct($iterator) {
     $arr = array();
+    $prevs = array();
     foreach ($iterator as $v) {
-      foreach ($arr as $other) {
-        if ($v->dom()->isSameNode($other->dom())) {
+      $dom = $v->dom();
+      if (!$dom) {
+        continue;
+      }
+      foreach ($prevs as $prev) {
+        if ($dom->isSameNode($prev)) {
           continue(2);
         }
       }
       $arr[] = $v;
+      $prevs[] = $dom;
     }
     $it = new \ArrayIterator($arr);
     parent::__construct($it);

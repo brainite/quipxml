@@ -101,7 +101,7 @@ class QuipXmlElement extends \SimpleXMLElement {
    * @return DOMElement|FALSE
    */
   public function dom($index = 0) {
-    if ($index == 0 && $this) {
+    if ($index == 0) {
       $dom = dom_import_simplexml($this);
       return $dom;
     }
