@@ -139,7 +139,7 @@ class BasicTest extends \PHPUnit_Framework_TestCase {
     $expected = "TEST THE CAST";
     $sxml = simplexml_load_file(__DIR__ . '/Resources/XmlBasicList.xml');
     $quip = Quip::load($sxml);
-    $sxml->original[0] = $expected;
+    $sxml->original = $expected;
     $actual = (string) $quip->original;
     $this->assertEquals($expected, $actual);
   }
