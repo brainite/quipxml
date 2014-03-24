@@ -33,3 +33,12 @@ foreach ($quip->xpath("//li")->eq(1) as $li) {
 // For advanced operations, just like in jQuery, you can access the DOMNode for a given XML node.
 $el = $ul->dom();
 ````
+
+HHVM Limitations for SimpleXML
+------------------------------
+
+Effective 2014-03-24 (confirmed on travis-ci), you cannot use the magic self-reference on SimpleXml elements. This code will not work:
+```` php
+$sxml = simplexml_load_file('example.xml');
+$sxml->original[0] = $expected;
+````
