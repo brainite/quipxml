@@ -42,3 +42,4 @@ Effective 2014-03-24 (confirmed on travis-ci), you cannot use the magic self-ref
 $sxml = simplexml_load_file('example.xml');
 $sxml->original[0] = $expected;
 ````
+Update: This was corrected on HHVM 3 (confirmed on travis-ci on 2014-05-30).
