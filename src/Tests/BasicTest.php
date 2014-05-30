@@ -25,6 +25,9 @@ class BasicTest extends \PHPUnit_Framework_TestCase {
     $quip = Quip::load(__DIR__ . '/Resources/XmlBasicList.xml', 0, TRUE);
     $add = $quip->xpath("//arg[@id = 'new-content']")->html();
     $tgt = $quip->xpath("//original//item[@class = 'target']");
+    echo "\nAdding: ";
+    var_dump($add);
+    echo "\n";
     $actual = $tgt->after($add)->xparent()->htmlOuter($formatter);
     $expected = $quip->xpath("//output[@method = 'after']")->html($formatter);
     $this->assertEquals($expected, $actual);
