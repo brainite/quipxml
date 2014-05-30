@@ -27,10 +27,10 @@ class QuipXmlElement extends \SimpleXMLElement {
     }
     elseif (is_string($content)) {
       if ($return_parent) {
-        $new = clone dom_import_simplexml(Quip::load("<root>$content</root>"));
+        $new = Quip::load("<root>$content</root>")->dom();
       }
       else {
-        $new = clone dom_import_simplexml(Quip::load($content));
+        $new = Quip::load($content)->dom();
       }
     }
     else {
