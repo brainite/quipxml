@@ -37,7 +37,7 @@ class PerformanceTest extends \PHPUnit_Framework_TestCase {
     }
     $post = memory_get_usage(FALSE);
     $memory_per_reference = round(($post - $pre) / $count);
-    var_dump($memory_per_reference);
+    //     var_dump($memory_per_reference);
     // This test is targeted to PHP 5.3
     // 5.4 and 5.5 both use 25% less memory
     $this->assertLessThanOrEqual(2250, $memory_per_reference, "Early tests only show 2.2K per additional 1-item iterator in context.");
