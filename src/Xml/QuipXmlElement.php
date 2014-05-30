@@ -37,6 +37,10 @@ class QuipXmlElement extends \SimpleXMLElement {
       throw new \InvalidArgumentException("Unknown type of content.");
     }
     $me = $this->dom();
+    var_dump($new);
+    var_dump($me);
+    var_dump($new->ownerDocument);
+    var_dump($me->ownerDocument);
     if ($new->ownerDocument !== $me->ownerDocument) {
       $clone = $new->cloneNode(TRUE);
       $new = $me->ownerDocument->importNode($clone, TRUE);
