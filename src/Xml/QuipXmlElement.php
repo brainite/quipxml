@@ -151,6 +151,11 @@ class QuipXmlElement extends \SimpleXMLElement {
     return $this;
   }
 
+  public function remove() {
+    $me = $this->dom();
+    return (bool) $me->parentNode->removeChild($me);
+  }
+
   public function unwrap() {
     $parent = $this->xparent()->dom();
     if (!$parent) {

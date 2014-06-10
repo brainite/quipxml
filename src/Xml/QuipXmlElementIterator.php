@@ -139,6 +139,10 @@ class QuipXmlElementIterator extends \IteratorIterator {
     return $this->_singleGetter('htmlOuter');
   }
 
+  public function remove() {
+    return $this->_eachSetter('remove');
+  }
+
   public function unwrap() {
     return $this->_eachSetter('unwrap');
   }
