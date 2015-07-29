@@ -143,7 +143,9 @@ class QuipXmlElement extends \SimpleXMLElement {
 
   public function htmlOuter($content = NULL) {
     if (!isset($content)) {
-      return trim(parent::asXML());
+      $str = parent::asXML();
+      $str = preg_replace('@^<\?xml.*?\?>\s*@s', '', $str);
+      return trim($str);
     }
     elseif ($content instanceof QuipXmlFormatter) {
       return $content->getFormattedOuter($this);
