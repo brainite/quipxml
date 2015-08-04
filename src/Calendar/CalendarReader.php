@@ -55,7 +55,7 @@ class CalendarReader {
 
     // If it is not a 'begin' entry, then it is a one-line "element".
     if ($el['component'] != 'begin') {
-      $node = &$doc->createElement($el['component'], $el['content']);
+      $node = &$doc->createElement($el['component'], str_replace('&', '&amp;', $el['content']));
       foreach ($el AS $k => $v) {
         if (($k != 'component') && ($k != 'content')) {
           $node->setAttribute(strToLower($k), $v);
