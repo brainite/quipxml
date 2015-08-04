@@ -21,6 +21,17 @@ class Quip {
     return new QuipXmlFormatter($settings);
   }
 
+  /**
+   * @param mixed $source
+   * @param number $options
+   * @param bool $data_is_url
+   * @param string $ns
+   * @param bool $is_prefix
+   * @param number $quip_options
+   * @throws \ErrorException
+   * @throws \Exception
+   * @return \QuipXml\Xml\QuipXmlElement
+   */
   static public function load($source, $options = 0, $data_is_url = FALSE, $ns = '', $is_prefix = FALSE, $quip_options = 0) {
     set_error_handler(function ($errno, $errstr, $errfile, $errline, $errcontext) {
       throw new \ErrorException($errstr, $errno);
@@ -61,6 +72,11 @@ class Quip {
         $dom = dom_import_simplexml($source);
         $return();
         return simplexml_import_dom($dom, '\\QuipXml\\Xml\\QuipXmlElement');
+      }
+
+      if ($source instanceof \DOMDocument) {
+        $return();
+        return simplexml_import_dom($source, '\\QuipXml\\Xml\\QuipXmlElement');
       }
 
       $quip = new QuipXmlElement($source, $options, $data_is_url, $ns, $is_prefix);
