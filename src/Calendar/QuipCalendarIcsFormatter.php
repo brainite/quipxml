@@ -2,7 +2,7 @@
 namespace QuipXml\Calendar;
 use QuipXml\Quip;
 use QuipXml\Xml\QuipXmlFormatter;
-class CalendarFormatter extends QuipXmlFormatter {
+class QuipCalendarIcsFormatter extends QuipXmlFormatter {
   public function getFormattedOuter($xml) {
     $output = $this->getFormattedRecursiveIterator($xml, 'VCALENDAR');
     return $output;

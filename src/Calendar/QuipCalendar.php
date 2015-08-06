@@ -1,7 +1,7 @@
 <?php
 namespace QuipXml\Calendar;
 use QuipXml\Quip;
-class CalendarReader {
+class QuipCalendar {
   /**
    *
    * @param unknown $source
@@ -12,7 +12,7 @@ class CalendarReader {
    * @param number $quip_options
    * @return \QuipXml\Xml\QuipXmlElement
    */
-  static public function load($source, $options = 0, $data_is_url = FALSE, $ns = '', $is_prefix = FALSE, $quip_options = 0) {
+  static public function loadIcal($source, $options = 0, $data_is_url = FALSE, $ns = '', $is_prefix = FALSE, $quip_options = 0) {
     // Get the content.
     if ($data_is_url) {
       $source = file_get_contents($source);
@@ -29,10 +29,34 @@ class CalendarReader {
     // Iterate through the lines
     $i = 0;
     while (count($lines) > $i) {
-      CalendarReader::loadICalElement($dom->documentElement, $lines, $i);
+      QuipCalendar::loadICalElement($dom->documentElement, $lines, $i);
     }
 
     return Quip::load($dom);
+  }
+
+  /**
+   * Initialize an empty calendar.
+   * @param array $defaults
+   * @return \QuipXml\Xml\QuipXmlElement
+   */
+  static public function loadEmpty($defaults = NULL) {
+    $uid = function_exists('uuid_create') ? uuid_create() : uniqid('quip-cal-');
+    $defaults = array_merge(array(
+      'uid' => $uid,
+      'name' => 'New Calendar',
+    ), (array) $defaults);
+    $ical = implode("\n", array(
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:QuipCalendar',
+      'CALSCALE:GREGORIAN',
+      'UID:' . $defaults['uid'],
+      'X-WR-CALNAME:' . $defaults['name'],
+      'X-WR-TIMEZONE:Etc/UTC',
+      'END:VCALENDAR',
+    ));
+    return QuipCalendar::loadIcal($ical);
   }
 
   /**
@@ -45,7 +69,7 @@ class CalendarReader {
    */
   static public function loadICalElement(&$xml, &$lines, &$i) {
     // Get the first entry.
-    $el = CalendarReader::getICalEntry($lines, $i);
+    $el = QuipCalendar::getICalEntry($lines, $i);
     $doc = $xml->ownerDocument;
 
     // If this is an 'end' entry, then the parent is finished.
@@ -76,7 +100,7 @@ class CalendarReader {
     // Look for the 'end' entry with the right content.
     $entry = Array();
     while (true) {
-      switch (CalendarReader::loadICalElement($node, $lines, $i)) {
+      switch (QuipCalendar::loadICalElement($node, $lines, $i)) {
         case 1: // end of parent;
           break (2);
         case 0: // child was added.
