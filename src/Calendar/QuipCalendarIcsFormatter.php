@@ -12,7 +12,11 @@ class QuipCalendarIcsFormatter extends QuipXmlFormatter {
     $output = '';
     $cleantr = array(
       "\n" => '\\n',
+      "\r" => '\\r',
+      "," => '\\,',
+      ";" => '\\;',
     );
+    $lf = "\r\n";
 
     // Add the attributes
     $attrs = '';
@@ -32,10 +36,10 @@ class QuipCalendarIcsFormatter extends QuipXmlFormatter {
     if (isset($tag) && strlen($tag) > 0) {
       $tag = strtoupper($tag);
       if ($number_children) {
-        $output = "BEGIN:$tag\n{$output}END:$tag\n";
+        $output = "BEGIN:$tag$lf{$output}END:$tag$lf";
       }
       else {
-        $output = "$tag$attrs:" . strtr($xml->html(), $cleantr) . "\n";
+        $output = "$tag$attrs:" . strtr($xml->html(), $cleantr) . $lf;
       }
     }
     return $output;
