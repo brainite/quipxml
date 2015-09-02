@@ -45,6 +45,7 @@ class QuipCalendar {
     $defaults = array_merge(array(
       'uid' => $uid,
       'name' => 'New Calendar',
+      'timezone' => 'Etc/UTC',
     ), (array) $defaults);
     $ical = implode("\n", array(
       'BEGIN:VCALENDAR',
@@ -53,7 +54,7 @@ class QuipCalendar {
       'CALSCALE:GREGORIAN',
       'UID:' . $defaults['uid'],
       'X-WR-CALNAME:' . $defaults['name'],
-      'X-WR-TIMEZONE:Etc/UTC',
+      'X-WR-TIMEZONE:' . $defaults['timezone'],
       'END:VCALENDAR',
     ));
     return QuipCalendar::loadIcal($ical);
