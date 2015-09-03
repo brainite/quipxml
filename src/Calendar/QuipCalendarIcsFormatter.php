@@ -39,7 +39,24 @@ class QuipCalendarIcsFormatter extends QuipXmlFormatter {
         $output = "BEGIN:$tag$lf{$output}END:$tag$lf";
       }
       else {
-        $output = "$tag$attrs:" . strtr($xml->html(), $cleantr) . $lf;
+        $value = strtr($xml->html(), $cleantr);
+        if (substr($tag, 0, 2) === 'DT' && $attrs === '') {
+          // Get the timezone.
+          $tz = NULL;
+          $tz_name = trim($xml->xpath('//x-wr-timezone')->html());
+          if ($tz_name !== '') {
+            $tz = new \DateTimeZone($tz_name);
+            $utc = new \DateTimeZone("UTC");
+          }
+
+          // Apply the timezone shift to use UTC.
+          if (substr($value, -1) !== 'Z' && isset($tz)) {
+            $dt = new \DateTime($value, $tz);
+            $dt->setTimezone($utc);
+            $value = $dt->format('Ymd\THis\Z');
+          }
+        }
+        $output = "$tag$attrs:" . $value . $lf;
       }
     }
     return $output;
