@@ -3,7 +3,28 @@ namespace QuipXml\Calendar;
 use QuipXml\Quip;
 use QuipXml\Xml\QuipXmlFormatter;
 class QuipCalendarIcsFormatter extends QuipXmlFormatter {
+  public function __construct($settings = NULL) {
+    $this->settings = array_merge($this->settings, array(
+      'fix_uid_length' => TRUE,
+    ), (array) $settings);
+  }
+
   public function getFormattedOuter($xml) {
+    if ($this->settings['fix_uid_length']) {
+      // Limit uid length to 71 (75-char line minus "UID:")
+      $uid =& $xml->xpath('/iCalendar/vcalendar/uid');
+      $val = $uid->html();
+      if (strlen($val) > 71) {
+        if (strpos($val, '@') === FALSE) {
+          $val = substr($val, 0, 71);
+        }
+        else {
+          $val = explode('@', $val, 2);
+          $val = substr($val[0], 0, 70 - max(0, strlen($val[1]))) . '@' . substr($val[1], 0, 70);
+        }
+        $uid->html($val);
+      }
+    }
     $output = $this->getFormattedRecursiveIterator($xml, 'VCALENDAR');
     return $output;
   }
@@ -56,7 +77,19 @@ class QuipCalendarIcsFormatter extends QuipXmlFormatter {
             $value = $dt->format('Ymd\THis\Z');
           }
         }
-        $output = "$tag$attrs:" . $value . $lf;
+        $line = "$tag$attrs:" . $value;
+        if (strlen($line) <= 75) {
+          $output = $line . $lf;
+        }
+        else {
+          $output = substr($line, 0, 75) . $lf;
+          $line = substr($line, 75);
+          while (strlen($line) > 74) {
+            $output .= ' ' . substr($line, 0, 74) . $lf;
+            $line = substr($line, 74);
+          }
+          $output .= " $line$lf";
+        }
       }
     }
     return $output;
