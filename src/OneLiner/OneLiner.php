@@ -10,9 +10,30 @@
 
 namespace QuipXml\OneLiner;
 class OneLiner {
-  static public function wrap($wrapper, $content) {
+  static public function isHtmlEmpty($html) {
+    if (!is_string($html) || $html == '') {
+      return TRUE;
+    }
+    if (stripos($html, '<img') !== FALSE) {
+      return FALSE;
+    }
+    $html = trim(strtr(strip_tags($html), array(
+      '&nbsp;' => '',
+    )));
+    if ($html == '') {
+      return TRUE;
+    }
+    return FALSE;
+  }
+
+  static public function wrap($wrapper, $content, $wrapIfEmpty = TRUE) {
     // Catch uninteresting cases quickly.
     if (!isset($wrapper) || $wrapper === '') {
+      return $content;
+    }
+
+    // If empty, then stop.
+    if (!$wrapIfEmpty && OneLiner::isHtmlEmpty($content)) {
       return $content;
     }
 
