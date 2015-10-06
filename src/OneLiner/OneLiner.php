@@ -10,7 +10,13 @@
 
 namespace QuipXml\OneLiner;
 class OneLiner {
-  static public function minifyHtml($html) {
+  static public function minifyHtml($html, $mode = 'html') {
+    if (!isset($html)) {
+      if ($mode === 'ob') {
+        $html = ob_get_contents();
+        ob_clean();
+      }
+    }
     $output = trim($html);
     if (strpos($output, '<pre') === FALSE) {
       $match = '@\s+(</?(?:li|ul|p)(?:>|\s))@s';
