@@ -10,6 +10,17 @@
 
 namespace QuipXml\OneLiner;
 class OneLiner {
+  static public function minifyHtml($html) {
+    $output = trim($html);
+    if (strpos($output, '<pre') === FALSE) {
+      $match = '@\s+(</?(?:li|ul|p)(?:>|\s))@s';
+      $output = preg_replace($match, '\1', $output);
+      $output = preg_replace("@\s*\n\s*@s", "\n", $output);
+      $output = preg_replace('@[ \t]+@s', ' ', $output);
+    }
+    return $output;
+  }
+
   static public function isHtmlEmpty($html) {
     if (!is_string($html) || $html == '') {
       return TRUE;
