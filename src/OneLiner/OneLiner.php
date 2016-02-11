@@ -45,7 +45,7 @@ class OneLiner {
 
   static public function wrap($wrapper, $content, $wrapIfEmpty = TRUE) {
     // Catch uninteresting cases quickly.
-    if (!isset($wrapper) || $wrapper === '') {
+    if (!isset($wrapper) || !is_string($wrapper) || $wrapper === '') {
       return $content;
     }
 
