@@ -9,7 +9,7 @@ class QuipCalendarIcsFormatter extends QuipXmlFormatter {
     ), (array) $settings);
   }
 
-  public function getFormattedOuter($xml) {
+  protected function &fixUid(&$xml) {
     if ($this->settings['fix_uid_length']) {
       // Limit uid length to 71 (75-char line minus "UID:")
       $uid =& $xml->xpath('/iCalendar/vcalendar/uid');
@@ -25,6 +25,31 @@ class QuipCalendarIcsFormatter extends QuipXmlFormatter {
         $uid->html($val);
       }
     }
+
+    return $this;
+  }
+
+  protected function getDateTime($value, &$xml) {
+    // Get the timezone.
+    $tz = NULL;
+    $tz_name = trim($xml->xpath('//x-wr-timezone')->html());
+    if ($tz_name !== '') {
+      $tz = new \DateTimeZone($tz_name);
+      $utc = new \DateTimeZone("UTC");
+    }
+
+    // Apply the timezone shift to use UTC.
+    if (substr($value, -1) !== 'Z' && isset($tz)) {
+      $dt = new \DateTime($value, $tz);
+      $dt->setTimezone($tz);
+      $value = $dt->format('Ymd\THis\Z');
+    }
+
+    return $value;
+  }
+
+  public function getFormattedOuter($xml) {
+    $this->fixUid($xml);
     $output = $this->getFormattedRecursiveIterator($xml, 'VCALENDAR');
     return $output;
   }
@@ -62,20 +87,7 @@ class QuipCalendarIcsFormatter extends QuipXmlFormatter {
       else {
         $value = strtr($xml->html(), $cleantr);
         if (substr($tag, 0, 2) === 'DT' && $attrs === '') {
-          // Get the timezone.
-          $tz = NULL;
-          $tz_name = trim($xml->xpath('//x-wr-timezone')->html());
-          if ($tz_name !== '') {
-            $tz = new \DateTimeZone($tz_name);
-            $utc = new \DateTimeZone("UTC");
-          }
-
-          // Apply the timezone shift to use UTC.
-          if (substr($value, -1) !== 'Z' && isset($tz)) {
-            $dt = new \DateTime($value, $tz);
-            $dt->setTimezone($utc);
-            $value = $dt->format('Ymd\THis\Z');
-          }
+          $value = $this->getDateTime($value, $xml);
         }
         $line = "$tag$attrs:" . $value;
         if (strlen($line) <= 75) {
