@@ -41,7 +41,7 @@ class QuipCalendarIcsFormatter extends QuipXmlFormatter {
     // Apply the timezone shift to use UTC.
     if (substr($value, -1) !== 'Z' && isset($tz)) {
       $dt = new \DateTime($value, $tz);
-      $dt->setTimezone($tz);
+      $dt->setTimezone($utc);
       $value = $dt->format('Ymd\THis\Z');
     }
 
@@ -73,10 +73,18 @@ class QuipCalendarIcsFormatter extends QuipXmlFormatter {
 
     // Add the children.
     $number_children = 0;
+    $output2 = '';
     foreach ($xml->children() as $child) {
       ++$number_children;
-      $output .= $this->getFormattedRecursiveIterator($child, $child->getName());
+      $tmp = $this->getFormattedRecursiveIterator($child, $child->getName());
+      if (preg_match('@^x-wr-@i', $child->getName())) {
+        $output .= $tmp;
+      }
+      else {
+        $output2 .= $tmp;
+      }
     }
+    $output .= $output2;
 
     // Wrap in the tag.
     if (isset($tag) && strlen($tag) > 0) {
