@@ -86,11 +86,15 @@ class Quip {
         $dom = new \DOMDocument();
         if (version_compare(PHP_VERSION, '5.4.0') >= 0) {
           $dom->loadHTML($data, $options);
+
+          // hhvm returns the root by default rather than the original imported item.
+          $cursor =& $dom->getElementsByTagName('body')->item(0)->childNodes->item(0);
         }
         else {
           $dom->loadHTML($data);
+          $cursor =& $dom;
         }
-        $quip = simplexml_import_dom($dom, '\\QuipXml\\Xml\\QuipXmlElement');
+        $quip = simplexml_import_dom($cursor, '\\QuipXml\\Xml\\QuipXmlElement');
       } catch (\Exception $e) {
         $return();
         throw $e;
