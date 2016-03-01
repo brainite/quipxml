@@ -5,6 +5,10 @@ php:
   - 5.3
   - hhvm
 
+matrix:
+  allow_failures:
+    - php: hhvm
+
 before_install:
   - composer install
 sudo: false
