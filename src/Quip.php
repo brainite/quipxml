@@ -87,8 +87,16 @@ class Quip {
         if (version_compare(PHP_VERSION, '5.4.0') >= 0) {
           $dom->loadHTML($data, $options);
 
-          // hhvm returns the root by default rather than the original imported item.
-          $cursor =& $dom->getElementsByTagName('body')->item(0)->childNodes->item(0);
+          if (preg_match('@<html.*<body@si', $data)) {
+            $cursor =& $dom;
+          }
+          elseif (preg_match('@<body@i', $data)) {
+            $cursor =& $dom->getElementsByTagName('body')->item(0);
+          }
+          else {
+            // hhvm returns the root by default rather than the original imported item.
+            $cursor =& $dom->getElementsByTagName('body')->item(0)->childNodes->item(0);
+          }
         }
         else {
           $dom->loadHTML($data);
