@@ -43,6 +43,34 @@ class OneLiner {
     return FALSE;
   }
 
+  /**
+   * Translate css classes.
+   *
+   * @param string $html
+   * @param array $css_tr array('*' => array(' old ' => ' new ',),)
+   * @return string
+   */
+  static public function htmlClassTr($html, $css_tr) {
+    $html = preg_replace_callback('@<(?<tag>[a-z]+)(?<other>\s+[^>]*)class="(?<class>[^"]+)"@s', function ($attrs) use ($css_tr) {
+      $class = ' '
+        . strtr($attrs['class'], array(
+          "\n" => ' ',
+          "\r" => ' ',
+          "\t" => ' ',
+        )) . ' ';
+      $class = strtr($class, $css_tr['*']);
+      if (isset($css_tr[$attrs['tag']])) {
+        $class = strtr($class, $css_tr[$attrs['tag']]);
+      }
+      $class = trim($class);
+      if ($class !== '') {
+        $class = 'class="' . $class . '"';
+      }
+      return '<' . $attrs['tag'] . $attrs['other'] . $class;
+    }, $html);
+    return $html;
+  }
+
   static public function wrap($wrapper, $content, $wrapIfEmpty = TRUE) {
     // Catch uninteresting cases quickly.
     if (!isset($wrapper) || !is_string($wrapper) || $wrapper === '') {
