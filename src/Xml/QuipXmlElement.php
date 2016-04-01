@@ -102,7 +102,7 @@ class QuipXmlElement extends \SimpleXMLElement {
    */
   public function dom($index = 0) {
     if ($index == 0) {
-      $dom = dom_import_simplexml($this);
+      $dom = @dom_import_simplexml($this);
       return $dom;
     }
     return FALSE;
@@ -155,6 +155,9 @@ class QuipXmlElement extends \SimpleXMLElement {
 
   public function remove() {
     $me = $this->dom();
+    if ($me === FALSE || !isset($me->parentNode)) {
+      return FALSE;
+    }
     return (bool) $me->parentNode->removeChild($me);
   }
 
