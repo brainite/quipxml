@@ -9,6 +9,19 @@ class QuipCalendarIcsFormatter extends QuipXmlFormatter {
     ), (array) $settings);
   }
 
+  protected function &fixDtEnd(&$xml) {
+    foreach ($xml->xpath('//vevent') as $vevent) {
+      $dtstart = (string) $vevent->dtstart;
+      $dtend = (string) $vevent->dtend;
+      if (empty($dtstart)) {
+        $vevent->dtstart = strftime('%Y%m%dT%H%M%S', time());
+      }
+      if ($dtend <= $dtstart) {
+        $vevent->dtend = strftime('%Y%m%dT%H%M%S', strtotime($dtend) + 60);
+      }
+    }
+  }
+
   protected function &fixUid(&$xml) {
     if ($this->settings['fix_uid_length']) {
       // Limit uid length to 71 (75-char line minus "UID:")
@@ -50,6 +63,7 @@ class QuipCalendarIcsFormatter extends QuipXmlFormatter {
 
   public function getFormattedOuter($xml) {
     $this->fixUid($xml);
+    $this->fixDtEnd($xml);
     $output = $this->getFormattedRecursiveIterator($xml, 'VCALENDAR');
     return $output;
   }
