@@ -10,6 +10,15 @@
 
 namespace QuipXml\OneLiner;
 class OneLiner {
+  static public function attributes(array $attrs = array()) {
+    $ret = '';
+    foreach ($attrs as $k => &$v) {
+      $v = implode(' ', (array) $v);
+      $ret .= " $k=\"" . htmlspecialchars($v, ENT_QUOTES, 'UTF-8') . '"';
+    }
+    return $ret;
+  }
+
   static public function minifyHtml($html, $mode = 'html') {
     if (!isset($html)) {
       if ($mode === 'ob') {
@@ -71,7 +80,7 @@ class OneLiner {
     return $html;
   }
 
-  static public function wrap($wrapper, $content, $wrapIfEmpty = TRUE) {
+  static public function wrap($wrapper, $content, $wrapIfEmpty = TRUE, $attrs = NULL) {
     // Catch uninteresting cases quickly.
     if (!isset($wrapper) || !is_string($wrapper) || $wrapper === '') {
       return $content;
@@ -84,7 +93,13 @@ class OneLiner {
 
     // Just a tag name.
     if (preg_match('@^[a-z0-9]+$@si', $wrapper)) {
-      $output = "<$wrapper>$content</$wrapper>";
+      if (isset($attrs)) {
+        $output = "<$wrapper" . self::attributes($attrs)
+          . ">$content</$wrapper>";
+      }
+      else {
+        $output = "<$wrapper>$content</$wrapper>";
+      }
       return $output;
     }
 
