@@ -117,12 +117,16 @@ class QuipXmlElement extends \SimpleXMLElement {
     if (!isset($content)) {
       $str = trim(parent::asXML());
       do {
-        list ($open, $str) = explode('>', $str, 2);
+        list($open, $str) = explode('>', $str, 2);
       } while (substr($open, -1) === '?');
       $tmp = explode('<', $str);
       array_pop($tmp);
       $str = join('<', $tmp);
       $str = trim($str);
+      $str = strtr($str, array(
+        "\r" => '',
+        '&#13;' => "",
+      ));
       return $str;
     }
     elseif ($content instanceof QuipXmlFormatter) {
