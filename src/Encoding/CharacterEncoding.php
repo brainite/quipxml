@@ -11,7 +11,8 @@
 namespace QuipXml\Encoding;
 class CharacterEncoding {
   const MODE_ORDINAL_NAME = 1;
-  const MODE_ENTITY_ENTITY = 2;
+  const MODE_ENTITYDEC_ENTITYNAME = 2;
+  const MODE_ENTITYHEX_ENTITYNAME = 3;
   static public function getEntitiesMap($entitySets = NULL, $mode = self::MODE_ORDINAL_NAME) {
     $entitySets = (array) $entitySets;
     if (empty($entitySets)) {
@@ -427,10 +428,17 @@ class CharacterEncoding {
 
     // Adjust for the mode.
     switch ($mode) {
-      case self::MODE_ENTITY_ENTITY:
+      case self::MODE_ENTITYDEC_ENTITYNAME:
         $entities = array();
         foreach ($ordinals as $k => $v) {
           $entities["&#$k;"] = "&$v;";
+        }
+        return $entities;
+
+      case self::MODE_ENTITYHEX_ENTITYNAME:
+        $entities = array();
+        foreach ($ordinals as $k => $v) {
+          $entities["&#x" . dechex($k) . ";"] = "&$v;";
         }
         return $entities;
 
@@ -491,7 +499,13 @@ class CharacterEncoding {
 
     // Remove numeric entities whenever possible.
     if (!$params['entities_prefer_numeric'] && strpos($output, '&#') !== FALSE) {
-      $output = strtr($output, self::getEntitiesMap(NULL, self::MODE_ENTITY_ENTITY));
+      $output = strtr($output, self::getEntitiesMap(NULL, self::MODE_ENTITYDEC_ENTITYNAME));
+      if (strpos($output, '&#x') !== FALSE) {
+        $output = preg_replace_callback('@&#x([^;]*);@s', function ($matches) {
+          return '&#x' . strtoupper(ltrim($matches[1], '0')) . ';';
+        }, $output);
+        $output = strtr($output, self::getEntitiesMap(NULL, self::MODE_ENTITYHEX_ENTITYNAME));
+      }
     }
 
     // Potential strategy that disables all tags:
