@@ -1,7 +1,7 @@
 {
     "name":"wittiws/quipxml",
     "type":"library",
-    "description":"Pre-alpha",
+    "description":"Enhanced SimpleXml-based toolkit",
     "keywords":[
         "xml"
     ],
