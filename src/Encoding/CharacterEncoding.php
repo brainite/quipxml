@@ -23,6 +23,8 @@ class CharacterEncoding {
         'HTMLSPECIAL',
         // http://www.w3schools.com/charsets/ref_html_8859.asp
         'ISO-8859-1',
+      // https://dev.w3.org/html5/html-author/charref
+      // 'HTML5',
       );
     }
 
@@ -416,6 +418,9 @@ class CharacterEncoding {
         255 => 'yuml',
       ),
     );
+    if (!isset($charsets['HTML5'])) {
+      $charsets['HTML5'] = array_flip(Html5Entities::getNamedEntities());
+    }
 
     // Build the list of entities.
     $ordinals = array();
