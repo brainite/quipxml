@@ -28,7 +28,8 @@ class OneLiner {
     }
     $output = trim($html);
     if (strpos($output, '<pre') === FALSE) {
-      $match = '@\s+(</?(?:li|ul|p)(?:>|\s))@s';
+      // Remove whitespace before certain tags.
+      $match = '@\s+(</?(?:li|ul|p|br)(?:>|\s))@si';
       $output = preg_replace($match, '\1', $output);
       $output = preg_replace("@\s*\n\s*@s", "\n", $output);
       $output = preg_replace('@[ \t]+@s', ' ', $output);
