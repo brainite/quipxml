@@ -69,6 +69,12 @@ class QuipCalendarJsonFeedFormatter extends QuipCalendarIcsFormatter {
         unset($event['location']);
       }
     }
+
+    foreach ($vevent->children() as $k => $v) {
+      if (stripos($k, 'X-') !== FALSE) {
+        $event[$k] = $v->html();
+      }
+    }
     return $event;
   }
 
