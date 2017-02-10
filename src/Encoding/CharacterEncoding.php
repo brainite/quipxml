@@ -12,6 +12,7 @@ namespace QuipXml\Encoding;
 class CharacterEncoding {
   const MODE_ORDINAL_NAME = 1;
   const MODE_ENTITYDEC_ENTITYNAME = 2;
+  const MODE_ENTITYNAME_ENTITYDEC = 4;
   const MODE_ENTITYHEX_ENTITYNAME = 3;
   static public function getEntitiesMap($entitySets = NULL, $mode = self::MODE_ORDINAL_NAME) {
     $entitySets = (array) $entitySets;
@@ -447,6 +448,13 @@ class CharacterEncoding {
         }
         return $entities;
 
+      case self::MODE_ENTITYNAME_ENTITYDEC:
+        $entities = array();
+        foreach ($ordinals as $k => $v) {
+          $entities["&$v;" ] = "&#$k;";
+        }
+        return $entities;
+
       case self::MODE_ORDINAL_NAME:
       default:
         return $ordinals;
@@ -462,6 +470,7 @@ class CharacterEncoding {
       'entities_prefer_numeric' => FALSE,
       'remove_carriage_return' => TRUE,
       'escape_ampersand' => FALSE,
+      'escape_ampersand_selective' => FALSE,
     // Potential params:
     //       'quotes' => ENT_NOQUOTES,
     //       // doctype = ENT_HTML5, ENT_XML1, ENT_HTML401
@@ -490,6 +499,18 @@ class CharacterEncoding {
     if ($params['escape_ampersand']) {
       $output = str_replace('&', '&amp;', $output);
     }
+    if ($params['escape_ampersand_selective']) {
+      $tmp = explode('&', $output);
+      $output = array_shift($tmp);
+      foreach ($tmp as $t) {
+        if (preg_match("@^[^\s;]{0,10};@s", $t)) {
+          $output .= '&' . $t;
+        }
+        else {
+          $output .= '&amp;' . $t;
+        }
+      }
+    }
 
     // Attempt fast encoding
     if (function_exists('mb_convert_encoding')) {
@@ -511,6 +532,11 @@ class CharacterEncoding {
         }, $output);
         $output = strtr($output, self::getEntitiesMap(NULL, self::MODE_ENTITYHEX_ENTITYNAME));
       }
+    }
+
+    // Convert to numeric when necessary.
+    if ($params['entities_prefer_numeric']) {
+      $output = strtr($output, self::getEntitiesMap(NULL, self::MODE_ENTITYNAME_ENTITYDEC));
     }
 
     // Potential strategy that disables all tags:
