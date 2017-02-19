@@ -471,6 +471,7 @@ class CharacterEncoding {
       'remove_carriage_return' => TRUE,
       'escape_ampersand' => FALSE,
       'escape_ampersand_selective' => FALSE,
+      'tags' => 'ignore',
     // Potential params:
     //       'quotes' => ENT_NOQUOTES,
     //       // doctype = ENT_HTML5, ENT_XML1, ENT_HTML401
@@ -532,6 +533,27 @@ class CharacterEncoding {
         }, $output);
         $output = strtr($output, self::getEntitiesMap(NULL, self::MODE_ENTITYHEX_ENTITYNAME));
       }
+    }
+
+    // Replace < > to disable tags.
+    switch ($params['tags']) {
+      case 'ignore':
+        break;
+
+      case 'remove':
+        $output = strip_tags($output);
+        $output = strtr($output, array(
+          '<' => '&lt;',
+          '>' => '&gt;',
+        ));
+        break;
+
+      case 'disable':
+      default:
+        $output = strtr($output, array(
+          '<' => '&lt;',
+          '>' => '&gt;',
+        ));
     }
 
     // Convert to numeric when necessary.
