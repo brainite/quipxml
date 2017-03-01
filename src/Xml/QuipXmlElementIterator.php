@@ -143,6 +143,10 @@ class QuipXmlElementIterator extends \IteratorIterator {
     return $this->_eachSetter('remove');
   }
 
+  public function setTag($tag) {
+    return $this->_eachSetter('setTag', $tag);
+  }
+
   public function unwrap() {
     return $this->_eachSetter('unwrap');
   }

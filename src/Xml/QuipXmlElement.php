@@ -165,6 +165,19 @@ class QuipXmlElement extends \SimpleXMLElement {
     return (bool) $me->parentNode->removeChild($me);
   }
 
+  public function setTag($tag) {
+    if (preg_match('@^[a-z0-9]+$@si', $tag)) {
+      $tagName = $tag;
+      $current = $this->htmlOuter();
+      $tag = "<$tag " . preg_replace('@^<[^\s>]+([^>]*)>.*$@s', '\1', $current)
+        . "/>";
+    }
+    else {
+      $tagName = preg_replace('@^<([^\s>/]+)[\s>/].*$@s', '\1', $tag);
+    }
+    return $this->wrapInner($tag)->xpath($tagName)->unwrap();
+  }
+
   public function unwrap() {
     $parent = $this->xparent()->dom();
     if (!$parent) {
@@ -187,13 +200,14 @@ class QuipXmlElement extends \SimpleXMLElement {
   }
 
   public function wrapInner($content) {
-    $me = $this->dom();
-    $new = $this->_contentToDom($content);
-    while ($me->childNodes->length != 0) {
-      $c = $me->childNodes->item(0);
-      $new->appendChild($c);
+    if ($me = $this->dom()) {
+      $new = $this->_contentToDom($content);
+      while ($me->childNodes->length != 0) {
+        $c = $me->childNodes->item(0);
+        $new->appendChild($c);
+      }
+      $child = $me->appendChild($new);
     }
-    $child = $me->appendChild($new);
     return $this;
   }
 
@@ -203,11 +217,6 @@ class QuipXmlElement extends \SimpleXMLElement {
    */
   public function xparent() {
     return $this->xpath('..');
-    $p =& parent::xpath('..');
-    if (sizeof($p)) {
-      return $p[0];
-    }
-    return $this->_getEmptyElement();
   }
 
   /**
