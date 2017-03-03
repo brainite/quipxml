@@ -191,11 +191,12 @@ class QuipXmlElement extends \SimpleXMLElement {
   }
 
   public function wrap($content) {
-    $me = $this->dom();
-    $parent = $me->parentNode;
-    $new = $this->_contentToDom($content);
-    $wrapper = $parent->insertBefore($new, $me);
-    $wrapper->appendChild($me);
+    if ($me = $this->dom()) {
+      $parent = $me->parentNode;
+      $new = $this->_contentToDom($content);
+      $wrapper = $parent->insertBefore($new, $me);
+      $wrapper->appendChild($me);
+    }
     return $this;
   }
 
