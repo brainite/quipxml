@@ -9,6 +9,17 @@ class QuipCalendarIcsFormatter extends QuipXmlFormatter {
     ), (array) $settings);
   }
 
+  static public function escape($text) {
+    static $cleantr = array(
+      '\\' => '\\\\',
+      "\n" => '\\n',
+      "\r" => '\\r',
+      "," => '\\,',
+      ";" => '\\;',
+    );
+    return strtr($text, $cleantr);
+  }
+
   protected function &fixDtEnd(&$xml) {
     foreach ($xml->xpath('//vevent') as $vevent) {
       $dtstart = (string) $vevent->dtstart;
@@ -25,7 +36,7 @@ class QuipCalendarIcsFormatter extends QuipXmlFormatter {
   protected function &fixUid(&$xml) {
     if ($this->settings['fix_uid_length']) {
       // Limit uid length to 71 (75-char line minus "UID:")
-      $uid =& $xml->xpath('/iCalendar/vcalendar/uid');
+      $uid = &$xml->xpath('/iCalendar/vcalendar/uid');
       $val = $uid->html();
       if (strlen($val) > 71) {
         if (strpos($val, '@') === FALSE) {
@@ -33,7 +44,8 @@ class QuipCalendarIcsFormatter extends QuipXmlFormatter {
         }
         else {
           $val = explode('@', $val, 2);
-          $val = substr($val[0], 0, 70 - max(0, strlen($val[1]))) . '@' . substr($val[1], 0, 70);
+          $val = substr($val[0], 0, 70 - max(0, strlen($val[1]))) . '@'
+            . substr($val[1], 0, 70);
         }
         $uid->html($val);
       }
@@ -68,15 +80,9 @@ class QuipCalendarIcsFormatter extends QuipXmlFormatter {
     return $output;
   }
 
-  private function getFormattedRecursiveIterator($xml, $tag = NULL) {
+  protected function getFormattedRecursiveIterator($xml, $tag = NULL) {
+    static $lf = "\r\n";
     $output = '';
-    $cleantr = array(
-      "\n" => '\\n',
-      "\r" => '\\r',
-      "," => '\\,',
-      ";" => '\\;',
-    );
-    $lf = "\r\n";
 
     // Add the attributes
     $attrs = '';
@@ -87,18 +93,22 @@ class QuipCalendarIcsFormatter extends QuipXmlFormatter {
 
     // Add the children.
     $number_children = 0;
-    $output2 = '';
-    foreach ($xml->children() as $child) {
-      ++$number_children;
-      $tmp = $this->getFormattedRecursiveIterator($child, $child->getName());
-      if (preg_match('@^x-wr-@i', $child->getName())) {
-        $output .= $tmp;
+    $override_value = $this->getFormattedTagOverrideChildren($xml, $tag);
+    if ($override_value === FALSE) {
+      $output2 = '';
+      foreach ($xml->children() as $child) {
+        ++$number_children;
+        $tmp = $this->getFormattedRecursiveIterator($child, $child->getName());
+        if (preg_match('@^x-wr-@i', $child->getName())) {
+          $output .= $tmp;
+        }
+        else {
+          $output2 .= $tmp;
+        }
       }
-      else {
-        $output2 .= $tmp;
-      }
+      $output .= $output2;
+      unset($override_value);
     }
-    $output .= $output2;
 
     // Wrap in the tag.
     if (isset($tag) && strlen($tag) > 0) {
@@ -107,7 +117,7 @@ class QuipCalendarIcsFormatter extends QuipXmlFormatter {
         $output = "BEGIN:$tag$lf{$output}END:$tag$lf";
       }
       else {
-        $value = strtr($xml->html(), $cleantr);
+        $value = isset($override_value) ? $override_value : self::escape($xml->html());
         if (substr($tag, 0, 2) === 'DT' && $attrs === '') {
           $value = $this->getDateTime($value, $xml);
         }
@@ -125,6 +135,21 @@ class QuipCalendarIcsFormatter extends QuipXmlFormatter {
           $output .= " $line$lf";
         }
       }
+    }
+    return $output;
+  }
+
+  protected function getFormattedTagOverrideChildren($xml, $tag) {
+    return FALSE;
+  }
+
+  protected function getFormattedTagOrderedChildren($xml, $children) {
+    $output = '';
+    foreach ($children as $i => $child) {
+      if ($i !== 0) {
+        $output .= ';';
+      }
+      $output .= $this->escape($xml->{$child}->html());
     }
     return $output;
   }
