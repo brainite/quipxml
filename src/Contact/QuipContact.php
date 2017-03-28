@@ -50,6 +50,7 @@ class QuipContact extends QuipCalendar {
       'BEGIN:VCARD',
       'VERSION:3.0',
       'PRODID:QuipContact',
+      'N:',
       'FN:' . QuipContactVcfFormatter::escape($defaults['FN']),
       'END:VCARD',
     ));
