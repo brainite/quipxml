@@ -464,20 +464,46 @@ class CharacterEncoding {
   static public function toHtml($source, $params = NULL) {
     $output = $source;
 
+    // Normalize params.
+    if (!is_array($params)) {
+      if (is_string($params)) {
+        $params = array(
+          'default_settings' => $params,
+        );
+      }
+      else {
+        $params = (array) $params;
+      }
+    }
+
+    // Expand the default settings
+    if (isset($params['default_settings'])) {
+      switch ($params['default_settings']) {
+        case 'user input':
+          $params = array_replace(array(
+            'purify' => TRUE,
+          ), $params);
+          break;
+      }
+    }
+
     // Default params.
     $params = array_replace(array(
+      'default_settings' => NULL,
       'from_encoding' => NULL,
       'entities_prefer_numeric' => FALSE,
       'remove_carriage_return' => TRUE,
       'escape_ampersand' => FALSE,
       'escape_ampersand_selective' => FALSE,
       'tags' => 'ignore',
+      'tags_allowed' => NULL,
+      'purify' => FALSE,
     // Potential params:
     //       'quotes' => ENT_NOQUOTES,
     //       // doctype = ENT_HTML5, ENT_XML1, ENT_HTML401
     //       'doctype' => ENT_XHTML,
     //       'allow_tags' => TRUE,
-    ), (array) $params);
+    ), $params);
 
     // If a source charset is provided, then convert to UTF-8.
     if (isset($params['from_encoding'])) {
@@ -561,11 +587,67 @@ class CharacterEncoding {
       $output = strtr($output, self::getEntitiesMap(NULL, self::MODE_ENTITYNAME_ENTITYDEC));
     }
 
+    // Perform basic xss filtering.
+    if ($params['purify'] !== FALSE) {
+      $purified = FALSE;
+      $purify = $params['purify'];
+      if ($purify === TRUE) {
+        if (function_exists('filter_xss')) {
+          $purify = 'filter_xss';
+        }
+        elseif (class_exists('HTMLPurifier')) {
+          $purify = 'htmlpurifier';
+        }
+      }
+      switch ($purify) {
+        case 'filter_xss':
+        // https://api.drupal.org/api/drupal/includes%21common.inc/function/filter_xss/7.x
+          if (is_array($params['tags_allowed'])) {
+            $output = filter_xss($output, $params['tags_allowed']);
+          }
+          else {
+            $output = filter_xss($output);
+          }
+          $purified = TRUE;
+          break;
+        case 'htmlpurifier':
+        // http://htmlpurifier.org/live/configdoc/plain.html
+          $config = HTMLPurifier_Config::createDefault();
+          if (is_array($params['tags_allowed'])) {
+            $config->set('HTML.AllowedElements', join(',', $params['tags_allowed']));
+          }
+          $purifier = new HTMLPurifier($config);
+          $output = $purifier->purify($output);
+          $purified = TRUE;
+          break;
+      }
+      if (!$purified) {
+        throw new \InvalidArgumentException("Invalid purify setting - unable to locate purifier.");
+      }
+    }
+
     // Potential strategy that disables all tags:
     //     $output = htmlentities($output, ENT_SUBSTITUTE | $params['quotes']
     //       | $params['doctype'], $params['charset'], $params['double_encode']);
 
     return $output;
+  }
+
+  static public function toHtmlSafe($source, $set_conf = NULL) {
+    static $conf = array(
+      'default_settings' => 'user input',
+    );
+    if (isset($set_conf)) {
+      if ($set_conf === FALSE) {
+        $conf = array(
+          'default_settings' => 'user input',
+        );
+      }
+      elseif (is_array($set_conf)) {
+        $conf = array_replace($conf, $set_conf);
+      }
+    }
+    return self::toHtml($source, $conf);
   }
 
 }
