@@ -117,13 +117,19 @@ class QuipCalendarIcsFormatter extends QuipXmlFormatter {
         $output = "BEGIN:$tag$lf{$output}END:$tag$lf";
       }
       else {
-        $value = isset($override_value) ? $override_value : self::escape($xml->html());
+        $value = isset($override_value) ? $override_value
+          : self::escape($xml->html());
         if (substr($tag, 0, 2) === 'DT' && $attrs === '') {
           $value = $this->getDateTime($value, $xml);
         }
         $line = "$tag$attrs:" . $value;
         if (strlen($line) <= 75) {
           $output = $line . $lf;
+        }
+        elseif ($tag === 'SUMMARY') {
+          // SUMMARY must be on one line for Outlook 2013
+          // https://www.witti.ws/blog/2017/07/23/outlook-ics
+          $output = substr($line, 0, 72) . '...' . $lf;
         }
         else {
           $output = substr($line, 0, 75) . $lf;
