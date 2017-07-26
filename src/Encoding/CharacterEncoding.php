@@ -462,6 +462,10 @@ class CharacterEncoding {
   }
 
   static public function toHtml($source, $params = NULL) {
+    if (!is_string($source)) {
+      return $source;
+    }
+
     $output = $source;
 
     // Normalize params.
