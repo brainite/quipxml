@@ -499,6 +499,7 @@ class CharacterEncoding {
       'remove_carriage_return' => TRUE,
       'escape_ampersand' => FALSE,
       'escape_ampersand_selective' => FALSE,
+      'escape_entities' => FALSE,
       'tags' => 'ignore',
       'tags_allowed' => NULL,
       'purify' => FALSE,
@@ -628,6 +629,11 @@ class CharacterEncoding {
       if (!$purified) {
         throw new \InvalidArgumentException("Invalid purify setting - unable to locate purifier.");
       }
+    }
+
+    // Escape all entities
+    if ($params['escape_entities']) {
+      $output = str_replace('&', '&amp;', $output);
     }
 
     // Potential strategy that disables all tags:
