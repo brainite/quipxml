@@ -76,7 +76,7 @@ class QuipCalendarIcsFormatter extends QuipXmlFormatter {
   public function getFormattedOuter($xml) {
     $this->fixUid($xml);
     $this->fixDtEnd($xml);
-    $output = $this->getFormattedRecursiveIterator($xml, 'VCALENDAR');
+    $output = $this->getFormattedRecursiveIterator($xml, $xml->getName());
     return $output;
   }
 
@@ -99,7 +99,7 @@ class QuipCalendarIcsFormatter extends QuipXmlFormatter {
       foreach ($xml->children() as $child) {
         ++$number_children;
         $tmp = $this->getFormattedRecursiveIterator($child, $child->getName());
-        if (preg_match('@^x-wr-@i', $child->getName())) {
+        if (preg_match('@^x-(?:wr|ms)-@i', $child->getName())) {
           $output .= $tmp;
         }
         else {
