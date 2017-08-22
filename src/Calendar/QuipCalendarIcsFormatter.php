@@ -11,6 +11,8 @@ class QuipCalendarIcsFormatter extends QuipXmlFormatter {
 
   static public function escape($text) {
     static $cleantr = array(
+      '&lt;' => '<',
+      '&gt;' => '>',
       '\\' => '\\\\',
       "\n" => '\\n',
       "\r" => '\\r',
@@ -99,7 +101,7 @@ class QuipCalendarIcsFormatter extends QuipXmlFormatter {
       foreach ($xml->children() as $child) {
         ++$number_children;
         $tmp = $this->getFormattedRecursiveIterator($child, $child->getName());
-        if (preg_match('@^x-(?:wr|ms)-@i', $child->getName())) {
+        if (preg_match('@^x-.*-@i', $child->getName())) {
           $output .= $tmp;
         }
         else {
