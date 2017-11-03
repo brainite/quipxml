@@ -178,6 +178,18 @@ class QuipXmlElement extends \SimpleXMLElement {
     return $this->wrapInner($tag)->xpath($tagName)->unwrap();
   }
 
+  public function text($content = NULL) {
+    if (!isset($content)) {
+      return strip_tags($this->html());
+    }
+    elseif ($me = $this->dom()) {
+      if (is_string($content) || is_numeric($content)) {
+        $me->nodeValue = (string) $content;
+      }
+    }
+    return $this;
+  }
+
   public function unwrap() {
     $parent = $this->xparent()->dom();
     if (!$parent) {

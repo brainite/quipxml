@@ -147,6 +147,16 @@ class QuipXmlElementIterator extends \IteratorIterator {
     return $this->_eachSetter('setTag', $tag);
   }
 
+  public function text($content = NULL) {
+    if (isset($content)) {
+      if ($content instanceof QuipXmlFormatter) {
+        return $this->_singleGetter('text', $content);
+      }
+      return $this->_eachSetter('text', $content);
+    }
+    return $this->_singleGetter('text');
+  }
+
   public function unwrap() {
     return $this->_eachSetter('unwrap');
   }
