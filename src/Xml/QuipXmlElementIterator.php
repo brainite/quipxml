@@ -89,6 +89,10 @@ class QuipXmlElementIterator extends \IteratorIterator {
     }
   }
 
+  public function addChild($name, $value = null, $namespace = null) {
+    return $this->_eachGetIterator('addChild', $name, $value, $namespace);
+  }
+
   public function after($content) {
     return $this->_eachSetter('after', $content);
   }
