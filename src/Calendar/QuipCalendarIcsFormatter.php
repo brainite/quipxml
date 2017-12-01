@@ -123,6 +123,7 @@ class QuipCalendarIcsFormatter extends QuipXmlFormatter {
           : self::escape($xml->html());
         if (substr($tag, 0, 2) === 'DT' && $attrs === '') {
           $value = $this->getDateTime($value, $xml);
+          $xml->html($value);
         }
         $line = "$tag$attrs:" . $value;
         if (strlen($line) <= 75) {
