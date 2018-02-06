@@ -124,7 +124,7 @@ class QuipXmlElementIterator extends \IteratorIterator {
   }
 
   public function get($path) {
-    return $this->_singleGetter('get', $path);
+    return $this->_eachGetIterator('get', $path);
   }
 
   public function html($content = NULL) {
