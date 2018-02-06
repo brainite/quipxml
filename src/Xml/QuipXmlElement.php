@@ -36,11 +36,16 @@ class QuipXmlElement extends \SimpleXMLElement {
     else {
       throw new \InvalidArgumentException("Unknown type of content.");
     }
-    $me = $this->dom();
-    if ($new->ownerDocument !== $me->ownerDocument) {
-      $clone = $new->cloneNode(TRUE);
-      $new = $me->ownerDocument->importNode($clone, TRUE);
+    if ($me = $this->dom()) {
+      if ($new->ownerDocument !== $me->ownerDocument) {
+        $clone = $new->cloneNode(TRUE);
+        $new = $me->ownerDocument->importNode($clone, TRUE);
+      }
     }
+    else {
+      throw new Exception\NotPermanentMemberException;
+    }
+
     return $new;
   }
 
@@ -188,12 +193,16 @@ class QuipXmlElement extends \SimpleXMLElement {
     }
     else {
       $new = $this->_contentToDom($content, TRUE);
-      $me = $this->dom();
-      while ($me->childNodes->length != 0) {
-        $me->removeChild($me->childNodes->item(0));
+      if ($me = $this->dom()) {
+        while ($me->childNodes->length != 0) {
+          $me->removeChild($me->childNodes->item(0));
+        }
+        foreach ($new->childNodes as $child) {
+          $me->appendChild($child->cloneNode(TRUE));
+        }
       }
-      foreach ($new->childNodes as $child) {
-        $me->appendChild($child->cloneNode(TRUE));
+      else {
+        throw new Exception\NotPermanentMemberException;
       }
     }
     return $this;

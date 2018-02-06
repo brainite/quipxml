@@ -56,7 +56,16 @@ class BasicTest extends \PHPUnit_Framework_TestCase {
   /**
    * @expectedException \QuipXml\Xml\Exception\NotPermanentMemberException
    */
-  public function testSimpleXmlLimits() {
+  public function testSimpleXmlLimitsHtml() {
+    $quip = Quip::load(__DIR__ . '/Resources/XmlBasicList.xml', 0, TRUE);
+    $orig = $quip->xpath('//original');
+    $orig->x->html('1');
+  }
+
+  /**
+   * @expectedException \QuipXml\Xml\Exception\NotPermanentMemberException
+   */
+  public function testSimpleXmlLimitsText() {
     $quip = Quip::load(__DIR__ . '/Resources/XmlBasicList.xml', 0, TRUE);
     $orig = $quip->xpath('//original');
     $orig->x->text('1');
