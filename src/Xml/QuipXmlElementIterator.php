@@ -20,7 +20,7 @@ class QuipXmlElementIterator extends \IteratorIterator {
       }
       foreach ($prevs as $prev) {
         if ($dom->isSameNode($prev)) {
-          continue(2);
+          continue (2);
         }
       }
       $arr[] = $v;
@@ -89,6 +89,15 @@ class QuipXmlElementIterator extends \IteratorIterator {
     }
   }
 
+  /**
+   * Adds a child element to the XML node
+   * @link http://www.php.net/manual/en/simplexmlelement.addchild.php
+   * @param name string                The name of the child element to add.
+   * @param value string[optional]     If specified, the value of the child element.
+   * @param namespace string[optional] If specified, the namespace to which the child element belongs.
+   * @return QuipXmlElementIterator    The addChild method returns a QuipXmlElementIterator
+   *                                   object representing the child(ren) added to the XML node(s).
+   */
   public function addChild($name, $value = null, $namespace = null) {
     return $this->_eachGetIterator('addChild', $name, $value, $namespace);
   }
@@ -185,6 +194,12 @@ class QuipXmlElementIterator extends \IteratorIterator {
     return $this->_eachGetIterator('xprev');
   }
 
+  /**
+   * Runs XPath query on XML data
+   * @link http://www.php.net/manual/en/simplexmlelement.xpath.php
+   * @param path string An XPath path
+   * @return QuipXmlElementIterator
+   */
   public function xpath($path) {
     if ($path{0} === '/') {
       $this->rewind();
