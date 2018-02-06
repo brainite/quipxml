@@ -123,6 +123,10 @@ class QuipXmlElementIterator extends \IteratorIterator {
     return $eq->dom();
   }
 
+  public function get($path) {
+    return $this->_singleGetter('get', $path);
+  }
+
   public function html($content = NULL) {
     if (isset($content)) {
       if ($content instanceof QuipXmlFormatter) {

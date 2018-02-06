@@ -53,6 +53,15 @@ class BasicTest extends \PHPUnit_Framework_TestCase {
     $this->assertEquals($expected, $actual);
   }
 
+  /**
+   * @expectedException \QuipXml\Xml\Exception\NotPermanentMemberException
+   */
+  public function testSimpleXmlLimits() {
+    $quip = Quip::load(__DIR__ . '/Resources/XmlBasicList.xml', 0, TRUE);
+    $orig = $quip->xpath('//original');
+    $orig->x->text('1');
+  }
+
   public function testSetNewChild() {
     $quip = Quip::load(__DIR__ . '/Resources/XmlBasicList.xml', 0, TRUE);
     $orig = $quip->xpath('//original')->eq();
@@ -63,7 +72,24 @@ class BasicTest extends \PHPUnit_Framework_TestCase {
     $orig = $quip->xpath('//original');
     $orig->x = 1;
     $actual = $orig->html($this->formatter);
+    $this->assertEquals($expected, $actual);
 
+    $quip = Quip::load(__DIR__ . '/Resources/XmlBasicList.xml', 0, TRUE);
+    $orig = $quip->xpath('//original');
+    $orig->get('x')->text('1');
+    $actual = $orig->html($this->formatter);
+    $this->assertEquals($expected, $actual);
+
+    $quip = Quip::load(__DIR__ . '/Resources/XmlBasicList.xml', 0, TRUE);
+    $orig = $quip->xpath('//original');
+    $orig->get('x')->html('1');
+    $actual = $orig->html($this->formatter);
+    $this->assertEquals($expected, $actual);
+
+    $quip = Quip::load(__DIR__ . '/Resources/XmlBasicList.xml', 0, TRUE);
+    $quip->get('//original/x[1]')->text('1');
+    $orig = $quip->xpath('//original');
+    $actual = $orig->html($this->formatter);
     $this->assertEquals($expected, $actual);
   }
 

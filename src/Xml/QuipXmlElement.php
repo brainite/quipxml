@@ -108,6 +108,60 @@ class QuipXmlElement extends \SimpleXMLElement {
     return FALSE;
   }
 
+  public function get($path) {
+    // Break the parts and look for the cursor that exists.
+    $parts = explode('/', $path);
+    $path = $prev = array_shift($parts);
+    $cursor = $this;
+    while (TRUE) {
+      if (preg_match('@[^/]@', $path)) {
+        $match = $this->xpath($path);
+        if (sizeof($match) >= 1) {
+          $cursor = $match->getInnerIterator()->current();
+        }
+        else {
+          array_unshift($parts, $prev);
+          break;
+        }
+      }
+      if (empty($parts)) {
+        break;
+      }
+      $prev = array_shift($parts);
+      $path .= '/' . $prev;
+    }
+
+    // Examine remaining parts for viability.
+    if (preg_match("@[:\.\*]|//@s", join('/', $parts))) {
+      throw new \InvalidArgumentException("Unable to init XML path ($path) containing [:.*] or //");
+    }
+
+    // Add the parts to build the XML.
+    foreach ($parts as $part) {
+      if (strpos($part, '[') !== FALSE) {
+        if (preg_match('@^(?<name>.*)\[(?<pos>\d+)\]@s', $part, $arr)) {
+          $limit = (int) $arr['pos'];
+          while ($limit-- >= 0) {
+            $cursor->addChild($arr['name']);
+            $match = $cursor->xpath($part);
+            if (sizeof($match) >= 1) {
+              $cursor = $match->getInnerIterator()->current();
+              break;
+            }
+          }
+        }
+        else {
+          throw new \InvalidArgumentException("Unable to init XML path ($path) containing complex filters");
+        }
+      }
+      else {
+        $cursor = $cursor->addChild($part);
+      }
+    }
+
+    return $cursor;
+  }
+
   /**
    * @todo set the html content.
    * @todo adjust the xml for html display.
@@ -186,6 +240,9 @@ class QuipXmlElement extends \SimpleXMLElement {
       if (is_string($content) || is_numeric($content)) {
         $me->nodeValue = (string) $content;
       }
+    }
+    else {
+      throw new Exception\NotPermanentMemberException;
     }
     return $this;
   }
