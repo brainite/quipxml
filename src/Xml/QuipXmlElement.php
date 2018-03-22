@@ -11,6 +11,7 @@
 namespace QuipXml\Xml;
 
 use QuipXml\Quip;
+use QuipXml\Encoding\CharacterEncoding;
 class QuipXmlElement extends \SimpleXMLElement {
   protected function _contentToDom($content, $return_parent = FALSE) {
     if ($content instanceof \SimpleXMLElement) {
@@ -247,7 +248,10 @@ class QuipXmlElement extends \SimpleXMLElement {
     }
     elseif ($me = $this->dom()) {
       if (is_string($content) || is_numeric($content)) {
-        $me->nodeValue = (string) $content;
+        $content = CharacterEncoding::toHtml((string) $content, array(
+          'escape_ampersand_selective' => TRUE,
+        ));
+        $me->nodeValue = $content;
       }
     }
     else {
