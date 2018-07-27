@@ -250,6 +250,7 @@ class QuipXmlElement extends \SimpleXMLElement {
       if (is_string($content) || is_numeric($content)) {
         $content = CharacterEncoding::toHtml((string) $content, array(
           'escape_ampersand_selective' => TRUE,
+          'entities_prefer_numeric' => TRUE,
         ));
         $me->nodeValue = $content;
       }

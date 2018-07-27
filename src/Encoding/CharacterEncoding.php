@@ -12,6 +12,7 @@ namespace QuipXml\Encoding;
 class CharacterEncoding {
   const MODE_ORDINAL_NAME = 1;
   const MODE_ENTITYDEC_ENTITYNAME = 2;
+  const MODE_ENTITYDEC_NAME = 5;
   const MODE_ENTITYNAME_ENTITYDEC = 4;
   const MODE_ENTITYHEX_ENTITYNAME = 3;
   static public function getEntitiesMap($entitySets = NULL, $mode = self::MODE_ORDINAL_NAME) {
@@ -418,6 +419,104 @@ class CharacterEncoding {
         254 => 'thorn',
         255 => 'yuml',
       ),
+      // iconv underperformed for transliteration:
+      //   https://stackoverflow.com/questions/13614622/transliterate-any-convertible-utf8-char-into-ascii-equivalent
+      //   'Kaloúdēs' became 'Kalo?d?s'
+      // Thus, building a custom character reference.
+      // Need to add extended Latin:
+      //   https://www.w3schools.com/charsets/ref_utf_latin_extended_a.asp
+      //   https://www.w3schools.com/charsets/ref_utf_latin_extended_b.asp
+      //   https://www.w3schools.com/charsets/ref_utf_letterlike.asp
+      //   and consider: https://plato.stanford.edu/symbols/entities.html
+      'TRANSLITERATE_ASCII' => array(
+        145 => '\'',
+        146 => '\'',
+        147 => '"',
+        148 => '"',
+        150 => '-',
+        151 => '-',
+        160 => ' ',
+        169 => '(c)',
+        171 => '"',
+        174 => '(R)',
+        177 => '+/i',
+        187 => '"',
+        188 => '1/4',
+        189 => '1/2',
+        190 => '3/4',
+        // 191 => 'iquest',
+        192 => 'A',
+        193 => 'A',
+        194 => 'A',
+        195 => 'A',
+        196 => 'A',
+        197 => 'A',
+        198 => 'AE',
+        199 => 'C',
+        200 => 'E',
+        201 => 'E',
+        202 => 'E',
+        203 => 'E',
+        204 => 'I',
+        205 => 'I',
+        206 => 'I',
+        207 => 'I',
+        // 208 => 'ETH',
+        209 => 'N',
+        210 => 'O',
+        211 => 'O',
+        212 => 'O',
+        213 => 'O',
+        214 => 'O',
+        215 => 'x',
+        // times
+        216 => 'O',
+        217 => 'U',
+        218 => 'U',
+        219 => 'U',
+        220 => 'U',
+        221 => 'Y',
+        // 222 => 'THORN',
+        223 => 's',
+        224 => 'a',
+        225 => 'a',
+        226 => 'a',
+        227 => 'a',
+        228 => 'a',
+        229 => 'a',
+        230 => 'ae',
+        231 => 'c',
+        232 => 'e',
+        233 => 'e',
+        234 => 'e',
+        235 => 'e',
+        236 => 'i',
+        237 => 'i',
+        238 => 'i',
+        239 => 'i',
+        // 240 => 'eth',
+        241 => 'n',
+        242 => 'o',
+        243 => 'o',
+        244 => 'o',
+        245 => 'o',
+        246 => 'o',
+        248 => 'o',
+        249 => 'u',
+        250 => 'u',
+        251 => 'u',
+        252 => 'u',
+        253 => 'y',
+        // 254 => 'thorn',
+        255 => 'y',
+        275 => 'e',
+        8211 => '-',
+        8212 => '-',
+        8216 => '\'',
+        8217 => '\'',
+        8220 => '"',
+        8221 => '"',
+      ),
     );
     if (!isset($charsets['HTML5'])) {
       $charsets['HTML5'] = array_flip(Html5Entities::getNamedEntities());
@@ -441,6 +540,13 @@ class CharacterEncoding {
         }
         return $entities;
 
+      case self::MODE_ENTITYDEC_NAME:
+        $entities = array();
+        foreach ($ordinals as $k => $v) {
+          $entities["&#$k;"] = $v;
+        }
+        return $entities;
+
       case self::MODE_ENTITYHEX_ENTITYNAME:
         $entities = array();
         foreach ($ordinals as $k => $v) {
@@ -451,7 +557,7 @@ class CharacterEncoding {
       case self::MODE_ENTITYNAME_ENTITYDEC:
         $entities = array();
         foreach ($ordinals as $k => $v) {
-          $entities["&$v;" ] = "&#$k;";
+          $entities["&$v;"] = "&#$k;";
         }
         return $entities;
 
@@ -483,6 +589,14 @@ class CharacterEncoding {
     // Expand the default settings
     if (isset($params['default_settings'])) {
       switch ($params['default_settings']) {
+        case 'ascii':
+          $params = array_replace(array(
+            'from_encoding' => 'UTF-8',
+            'entities_prefer_numeric' => TRUE,
+            'transliterate_ascii' => TRUE,
+          ), $params);
+          break;
+
         case 'user input':
           $params = array_replace(array(
             'purify' => TRUE,
@@ -495,6 +609,8 @@ class CharacterEncoding {
     $params = array_replace(array(
       'default_settings' => NULL,
       'from_encoding' => NULL,
+      // from: UTF-8, ISO-8859-1
+      'transliterate_ascii' => FALSE,
       'entities_prefer_numeric' => FALSE,
       'remove_carriage_return' => TRUE,
       'escape_ampersand' => FALSE,
@@ -510,13 +626,42 @@ class CharacterEncoding {
     //       'allow_tags' => TRUE,
     ), $params);
 
+    // Force configurations.
+    if ($params['transliterate_ascii']) {
+      $params['entities_prefer_numeric'] = TRUE;
+    }
+
     // If a source charset is provided, then convert to UTF-8.
     if (isset($params['from_encoding'])) {
-      if (function_exists('mb_convert_encoding')) {
-        $output = mb_convert_encoding($output, 'UTF-8', $params['from_encoding']);
+      if ($params['from_encoding'] === 'UTF-8') {
+        /**
+         * Info on entity translations:
+         * @link http://www.w3.org/TR/xhtml-modularization/dtd_module_defs.html#a_xhtml_character_entities
+         * Most of the multibyte problems can be addressed by casting the character set out of UTF-8!
+         */
+        if (preg_match('/[\194-\226]/', $output)) {
+          // utf8_decode breaks things it does not understand, so we use a fancier tactic.
+          // $data = utf8_decode($data);
+
+          /* Only do the slow convert if there are 8-bit characters */
+          /* avoid using 0xA0 (\240) in ereg ranges. RH73 does not like that */
+          if (!preg_match("/[\200-\237\241-\377]/", $output)) {
+          }
+          else {
+            // decode three byte unicode characters
+            $output = preg_replace("/([\340-\357])([\200-\277])([\200-\277])/e", "'&#'.((ord('\\1')-224)*4096 + (ord('\\2')-128)*64 + (ord('\\3')-128)).';'", $output);
+            // decode two byte unicode characters
+            $output = preg_replace("/([\300-\337])([\200-\277])/e", "'&#'.((ord('\\1')-192)*64+(ord('\\2')-128)).';'", $output);
+          }
+        }
       }
       else {
-        $output = iconv($params['from_encoding'], 'UTF-8', $output);
+        if (function_exists('mb_convert_encoding')) {
+          $output = mb_convert_encoding($output, 'UTF-8', $params['from_encoding']);
+        }
+        else {
+          $output = iconv($params['from_encoding'], 'UTF-8', $output);
+        }
       }
     }
 
@@ -566,6 +711,22 @@ class CharacterEncoding {
       }
     }
 
+    // Transliterate any remaining entities to ASCII when possible.
+    //   (i.e., remove accents)
+    if ($params['transliterate_ascii'] && strpos($output, '&') !== FALSE) {
+      if (strpos($output, '&#') !== FALSE) {
+        $output = strtr($output, self::getEntitiesMap('TRANSLITERATE_ASCII', self::MODE_ENTITYDEC_NAME));
+      }
+      if (strpos($output, '&') !== FALSE) {
+        $html = self::getEntitiesMap('HTMLLAT1', self::MODE_ORDINAL_NAME);
+        foreach (self::getEntitiesMap('TRANSLITERATE_ASCII', self::MODE_ORDINAL_NAME) as $k => $v) {
+          if (isset($html[$k])) {
+            $output = str_replace("&{$html[$k]};", $v, $output);
+          }
+        }
+      }
+    }
+
     // Replace < > to disable tags.
     switch ($params['tags']) {
       case 'ignore':
@@ -589,7 +750,9 @@ class CharacterEncoding {
 
     // Convert to numeric when necessary.
     if ($params['entities_prefer_numeric']) {
-      $output = strtr($output, self::getEntitiesMap(NULL, self::MODE_ENTITYNAME_ENTITYDEC));
+      if (strpos($output, '&') !== FALSE) {
+        $output = strtr($output, self::getEntitiesMap(NULL, self::MODE_ENTITYNAME_ENTITYDEC));
+      }
     }
 
     // Perform basic xss filtering.
