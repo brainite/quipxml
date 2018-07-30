@@ -649,9 +649,17 @@ class CharacterEncoding {
           }
           else {
             // decode three byte unicode characters
-            $output = preg_replace("/([\340-\357])([\200-\277])([\200-\277])/e", "'&#'.((ord('\\1')-224)*4096 + (ord('\\2')-128)*64 + (ord('\\3')-128)).';'", $output);
+            $output = preg_replace_callback("/([\340-\357])([\200-\277])([\200-\277])/", function ($matches) {
+              return '&#'
+                . ((ord($matches[1]) - 224) * 4096 + (ord($matches[2]) - 128)
+                    * 64 + (ord($matches[3]) - 128)) . ';';
+            }, $output);
             // decode two byte unicode characters
-            $output = preg_replace("/([\300-\337])([\200-\277])/e", "'&#'.((ord('\\1')-192)*64+(ord('\\2')-128)).';'", $output);
+            $output = preg_replace_callback("/([\300-\337])([\200-\277])/", function ($matches) {
+              return '&#'
+                . ((ord($matches[1]) - 192) * 64 + (ord($matches[2]) - 128))
+                . ';';
+            }, $output);
           }
         }
       }
