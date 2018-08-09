@@ -17,6 +17,7 @@ before_install:
   - composer install
   - mkdir -p ./vendor/bin
   - curl -sSfL -o ./vendor/bin/phpunit https://phar.phpunit.de/phpunit-5.7.phar
+  - chmod u+x ./vendor/bin/phpunit
 
 script:
   - ./vendor/bin/phpunit .
