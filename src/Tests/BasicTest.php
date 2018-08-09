@@ -136,6 +136,16 @@ class BasicTest extends \PHPUnit_Framework_TestCase {
     $this->assertEmpty($test4);
   }
 
+  public function testNbsp() {
+    $test = '<div>Hello&nbsp;World!</div>';
+    $expected = '<div>Hello&nbsp;World!</div>';
+    $quip = \QuipXml\Quip::load($test);
+    $actual = $quip->htmlOuter();
+    $this->assertEquals($expected, $actual);
+    $actual = $quip->htmlOuter(new \QuipXml\Xml\QuipXmlFormatter());
+    $this->assertEquals($expected, $actual);
+  }
+
   public function testSurviveEmpty() {
     $quip = Quip::load(__DIR__ . '/Resources/XmlBasicList.xml', 0, TRUE);
 
