@@ -15,8 +15,7 @@ matrix:
 
 before_install:
   - composer install
-
-before_script:
+  - mkdir -p ./vendor/bin
   - curl -sSfL -o ./vendor/bin/phpunit https://phar.phpunit.de/phpunit-5.7.phar
 
 script:
