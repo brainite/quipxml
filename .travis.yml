@@ -11,8 +11,7 @@ matrix:
     - php: 7.1
       env: PHPUNITVER=5.7
     - php: hhvm
-      env: PHPUNITVER=5.7
-      env: HHVM=true
+      env: PHPUNITVER=5.7 HHVM=true
   allow_failures:
     - php: hhvm
 
