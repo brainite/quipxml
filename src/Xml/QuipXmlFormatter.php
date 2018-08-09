@@ -47,9 +47,11 @@ class QuipXmlFormatter {
 
     $str = strtr($str, array(
       '&#xD;' => '',
+      '&#13;' => "",
       "\r\n" => "\n",
+      '&#xA0;' => '&nbsp;',
     ));
-    trim($str);
+    $str = trim($str);
     return $str;
   }
 

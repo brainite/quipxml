@@ -186,6 +186,7 @@ class QuipXmlElement extends \SimpleXMLElement {
       $str = strtr($str, array(
         "\r" => '',
         '&#13;' => "",
+        '&#xA0;' => '&nbsp;',
       ));
       return $str;
     }
@@ -213,6 +214,11 @@ class QuipXmlElement extends \SimpleXMLElement {
     if (!isset($content)) {
       $str = parent::asXML();
       $str = preg_replace('@^<\?xml.*?\?>\s*@s', '', $str);
+      $str = strtr($str, array(
+        "\r" => '',
+        '&#13;' => "",
+        '&#xA0;' => '&nbsp;',
+      ));
       return trim($str);
     }
     elseif ($content instanceof QuipXmlFormatter) {

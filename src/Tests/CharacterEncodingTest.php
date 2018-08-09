@@ -26,4 +26,14 @@ class CharacterEncodingTest extends \PHPUnit_Framework_TestCase {
     $not_supported = "œ Œ ß";
   }
 
+  public function testNbsp() {
+    $test = '<div>Hello&nbsp;World!</div>';
+    $expected = '<div>Hello&nbsp;World!</div>';
+    $quip = \QuipXml\Quip::load($test);
+    $actual = $quip->htmlOuter();
+    $this->assertEquals($expected, $actual);
+    $actual = $quip->htmlOuter(new \QuipXml\Xml\QuipXmlFormatter());
+    $this->assertEquals($expected, $actual);
+  }
+
 }

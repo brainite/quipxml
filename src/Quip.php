@@ -79,28 +79,36 @@ class Quip {
         return simplexml_import_dom($source, '\\QuipXml\\Xml\\QuipXmlElement');
       }
 
+      if (!$data_is_url) {
+        $source = strtr($source, array(
+          '&nbsp;' => '&#xA0;',
+        ));
+      }
       $quip = new QuipXmlElement($source, $options, $data_is_url, $ns, $is_prefix);
     } catch (\Exception $e) {
       try {
         $data = $data_is_url ? file_get_contents($source) : $source;
+        $data = strtr($data, array(
+          '&nbsp;' => '&#xA0;',
+        ));
         $dom = new \DOMDocument();
         if (version_compare(PHP_VERSION, '5.4.0') >= 0) {
           $dom->loadHTML($data, $options);
 
           if (preg_match('@<html.*<body@si', $data)) {
-            $cursor =& $dom;
+            $cursor = &$dom;
           }
           elseif (preg_match('@<body@i', $data)) {
-            $cursor =& $dom->getElementsByTagName('body')->item(0);
+            $cursor = &$dom->getElementsByTagName('body')->item(0);
           }
           else {
             // hhvm returns the root by default rather than the original imported item.
-            $cursor =& $dom->getElementsByTagName('body')->item(0)->childNodes->item(0);
+            $cursor = &$dom->getElementsByTagName('body')->item(0)->childNodes->item(0);
           }
         }
         else {
           $dom->loadHTML($data);
-          $cursor =& $dom;
+          $cursor = &$dom;
         }
         $quip = simplexml_import_dom($cursor, '\\QuipXml\\Xml\\QuipXmlElement');
       } catch (\Exception $e) {
