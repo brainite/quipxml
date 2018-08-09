@@ -15,12 +15,11 @@ matrix:
 
 before_install:
   - composer install
-#  - if [[ $HHVM == true ]]; then composer require "phpunit/phpunit:5.7"; fi
 
 before_script:
-  - curl -sSfL -o ~/.phpenv/versions/hhvm/bin/phpunit https://phar.phpunit.de/phpunit-5.7.phar
+  - curl -sSfL -o ~/vendor/bin/phpunit https://phar.phpunit.de/phpunit-5.7.phar
 
-#script:
-#  - if [[ $HHVM == true ]]; then ./vendor/bin/phpunit .; else phpunit .; fi
+script:
+  - ./vendor/bin/phpunit .
 
 sudo: false
