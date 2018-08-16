@@ -15,6 +15,7 @@ class CharacterEncoding {
   const MODE_ENTITYDEC_NAME = 5;
   const MODE_ENTITYNAME_ENTITYDEC = 4;
   const MODE_ENTITYHEX_ENTITYNAME = 3;
+  const MODE_CHAR_ENTITYDEC = 6;
   static public function getEntitiesMap($entitySets = NULL, $mode = self::MODE_ORDINAL_NAME) {
     $entitySets = (array) $entitySets;
     if (empty($entitySets)) {
@@ -25,8 +26,9 @@ class CharacterEncoding {
         'HTMLSPECIAL',
         // http://www.w3schools.com/charsets/ref_html_8859.asp
         'ISO-8859-1',
-      // https://dev.w3.org/html5/html-author/charref
-      // 'HTML5',
+        // https://dev.w3.org/html5/html-author/charref
+        // 'HTML5',
+        'ISO-8859-1:BYTES',
       );
     }
 
@@ -419,6 +421,35 @@ class CharacterEncoding {
         254 => 'thorn',
         255 => 'yuml',
       ),
+      'ISO-8859-1:BYTES' => array(
+        128 => "\xe2\x82\xac",
+        130 => "\xe2\x80\x9a",
+        131 => "\xc6\x92",
+        132 => "\xe2\x80\x9e",
+        133 => "\xe2\x80\xa6",
+        134 => "\xe2\x80\xa0",
+        135 => "\xe2\x80\xa1",
+        136 => "\xcb\x86",
+        137 => "\xe2\x80\xb0",
+        138 => "\xc5\xa0",
+        139 => "\xe2\x80\xb9",
+        140 => "\xc5\x92",
+        142 => "\xc5\xbd",
+        145 => "\xe2\x80\x98",
+        146 => "\xe2\x80\x99",
+        147 => "\xe2\x80\x9c",
+        148 => "\xe2\x80\x9d",
+        149 => "\xe2\x80\xa2",
+        150 => "\xe2\x80\x93",
+        151 => "\xe2\x80\x94",
+        152 => "\xcb\x9c",
+        153 => "\xe2\x84\xa2",
+        154 => "\xc5\xa1",
+        155 => "\xe2\x80\xba",
+        156 => "\xc5\x93",
+        158 => "\xc5\xbe",
+        159 => "\xc5\xb8",
+      ),
       // iconv underperformed for transliteration:
       //   https://stackoverflow.com/questions/13614622/transliterate-any-convertible-utf8-char-into-ascii-equivalent
       //   'Kaloúdēs' became 'Kalo?d?s'
@@ -561,6 +592,13 @@ class CharacterEncoding {
         }
         return $entities;
 
+      case self::MODE_CHAR_ENTITYDEC:
+        $entities = array();
+        foreach ($ordinals as $k => $v) {
+          $entities[$v] = "&#$k;";
+        }
+        return $entities;
+
       case self::MODE_ORDINAL_NAME:
       default:
         return $ordinals;
@@ -592,6 +630,7 @@ class CharacterEncoding {
         case 'ascii':
           $params = array_replace(array(
             'from_encoding' => 'UTF-8',
+            'from_encoding_aggressive' => TRUE,
             'entities_prefer_numeric' => TRUE,
             'transliterate_ascii' => TRUE,
           ), $params);
@@ -610,6 +649,7 @@ class CharacterEncoding {
       'default_settings' => NULL,
       'from_encoding' => NULL,
       // from: UTF-8, ISO-8859-1
+      'from_encoding_aggressive' => TRUE,
       'transliterate_ascii' => FALSE,
       'entities_prefer_numeric' => FALSE,
       'remove_carriage_return' => TRUE,
@@ -651,8 +691,9 @@ class CharacterEncoding {
             // decode three byte unicode characters
             $output = preg_replace_callback("/([\340-\357])([\200-\277])([\200-\277])/", function ($matches) {
               return '&#'
-                . ((ord($matches[1]) - 224) * 4096 + (ord($matches[2]) - 128)
-                    * 64 + (ord($matches[3]) - 128)) . ';';
+                . ((ord($matches[1]) - 224) * 4096
+                  + (ord($matches[2]) - 128) * 64 + (ord($matches[3]) - 128))
+                . ';';
             }, $output);
             // decode two byte unicode characters
             $output = preg_replace_callback("/([\300-\337])([\200-\277])/", function ($matches) {
@@ -661,6 +702,9 @@ class CharacterEncoding {
                 . ';';
             }, $output);
           }
+        }
+        if ($params['from_encoding_aggressive']) {
+          $output = strtr($output, self::getEntitiesMap('ISO-8859-1:BYTES', self::MODE_CHAR_ENTITYDEC));
         }
       }
       else {
@@ -699,7 +743,12 @@ class CharacterEncoding {
 
     // Attempt fast encoding
     if (function_exists('mb_convert_encoding')) {
-      $output = mb_convert_encoding($output, 'HTML-ENTITIES');
+      if ($params['from_encoding']) {
+        $output = mb_convert_encoding($output, 'HTML-ENTITIES', 'UTF-8');
+      }
+      else {
+        $output = mb_convert_encoding($output, 'HTML-ENTITIES');
+      }
     }
     else {
       // Convert non-ASCII characters to entities.
