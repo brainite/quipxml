@@ -10,10 +10,12 @@ matrix:
       env: PHPUNITVER=5.7
     - php: 7.1
       env: PHPUNITVER=5.7
-    - php: hhvm
+    - php: hhvm-3.21
+      env: PHPUNITVER=5.7 HHVM=true
+    - php: hhvm-3.25
       env: PHPUNITVER=5.7 HHVM=true
   allow_failures:
-    - php: hhvm
+    - php: hhvm-3.21 hhvm-3.25
 
 before_install:
   - composer install
