@@ -28,7 +28,6 @@ class CharacterEncoding {
         'ISO-8859-1',
         // https://dev.w3.org/html5/html-author/charref
         // 'HTML5',
-        'ISO-8859-1:BYTES',
       );
     }
 
@@ -421,35 +420,6 @@ class CharacterEncoding {
         254 => 'thorn',
         255 => 'yuml',
       ),
-      'ISO-8859-1:BYTES' => array(
-        128 => "\xe2\x82\xac",
-        130 => "\xe2\x80\x9a",
-        131 => "\xc6\x92",
-        132 => "\xe2\x80\x9e",
-        133 => "\xe2\x80\xa6",
-        134 => "\xe2\x80\xa0",
-        135 => "\xe2\x80\xa1",
-        136 => "\xcb\x86",
-        137 => "\xe2\x80\xb0",
-        138 => "\xc5\xa0",
-        139 => "\xe2\x80\xb9",
-        140 => "\xc5\x92",
-        142 => "\xc5\xbd",
-        145 => "\xe2\x80\x98",
-        146 => "\xe2\x80\x99",
-        147 => "\xe2\x80\x9c",
-        148 => "\xe2\x80\x9d",
-        149 => "\xe2\x80\xa2",
-        150 => "\xe2\x80\x93",
-        151 => "\xe2\x80\x94",
-        152 => "\xcb\x9c",
-        153 => "\xe2\x84\xa2",
-        154 => "\xc5\xa1",
-        155 => "\xe2\x80\xba",
-        156 => "\xc5\x93",
-        158 => "\xc5\xbe",
-        159 => "\xc5\xb8",
-      ),
       // iconv underperformed for transliteration:
       //   https://stackoverflow.com/questions/13614622/transliterate-any-convertible-utf8-char-into-ascii-equivalent
       //   'Kaloúdēs' became 'Kalo?d?s'
@@ -649,7 +619,7 @@ class CharacterEncoding {
       'default_settings' => NULL,
       'from_encoding' => NULL,
       // from: UTF-8, ISO-8859-1
-      'from_encoding_aggressive' => TRUE,
+      'from_encoding_aggressive' => FALSE,
       'transliterate_ascii' => FALSE,
       'entities_prefer_numeric' => FALSE,
       'remove_carriage_return' => TRUE,
@@ -683,6 +653,14 @@ class CharacterEncoding {
           // utf8_decode breaks things it does not understand, so we use a fancier tactic.
           // $data = utf8_decode($data);
 
+          if ($params['from_encoding_aggressive']) {
+            // Unicode cleanup. Remove latin-supplement.
+            // https://www.charbase.com/block/latin-supplement
+            $output = preg_replace_callback("@[\x80-\x9F]@", function($matches) {
+              return '&#' . ord($matches[0]) . ';';
+            }, $output);
+          }
+
           /* Only do the slow convert if there are 8-bit characters */
           /* avoid using 0xA0 (\240) in ereg ranges. RH73 does not like that */
           if (!preg_match("/[\200-\237\241-\377]/", $output)) {
@@ -703,9 +681,7 @@ class CharacterEncoding {
             }, $output);
           }
         }
-        if ($params['from_encoding_aggressive']) {
-          $output = strtr($output, self::getEntitiesMap('ISO-8859-1:BYTES', self::MODE_CHAR_ENTITYDEC));
-        }
+
       }
       else {
         if (function_exists('mb_convert_encoding')) {
