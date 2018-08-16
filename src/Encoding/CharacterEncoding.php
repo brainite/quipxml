@@ -653,14 +653,6 @@ class CharacterEncoding {
           // utf8_decode breaks things it does not understand, so we use a fancier tactic.
           // $data = utf8_decode($data);
 
-          if ($params['from_encoding_aggressive']) {
-            // Unicode cleanup. Remove latin-supplement.
-            // https://www.charbase.com/block/latin-supplement
-            $output = preg_replace_callback("@[\x80-\x9F]@", function($matches) {
-              return '&#' . ord($matches[0]) . ';';
-            }, $output);
-          }
-
           /* Only do the slow convert if there are 8-bit characters */
           /* avoid using 0xA0 (\240) in ereg ranges. RH73 does not like that */
           if (!preg_match("/[\200-\237\241-\377]/", $output)) {
@@ -678,6 +670,14 @@ class CharacterEncoding {
               return '&#'
                 . ((ord($matches[1]) - 192) * 64 + (ord($matches[2]) - 128))
                 . ';';
+            }, $output);
+          }
+
+          if ($params['from_encoding_aggressive']) {
+            // Unicode cleanup. Remove latin-supplement.
+            // https://www.charbase.com/block/latin-supplement
+            $output = preg_replace_callback("@[\x80-\x9F]@", function($matches) {
+              return '&#' . ord($matches[0]) . ';';
             }, $output);
           }
         }
