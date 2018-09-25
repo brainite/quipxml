@@ -26,8 +26,8 @@ class CharacterEncoding {
         'HTMLSPECIAL',
         // http://www.w3schools.com/charsets/ref_html_8859.asp
         'ISO-8859-1',
-        // https://dev.w3.org/html5/html-author/charref
-        // 'HTML5',
+      // https://dev.w3.org/html5/html-author/charref
+      // 'HTML5',
       );
     }
 
@@ -603,6 +603,7 @@ class CharacterEncoding {
             'from_encoding_aggressive' => TRUE,
             'entities_prefer_numeric' => TRUE,
             'transliterate_ascii' => TRUE,
+            'tags' => 'ignore',
           ), $params);
           break;
 
@@ -676,7 +677,7 @@ class CharacterEncoding {
           if ($params['from_encoding_aggressive']) {
             // Unicode cleanup. Remove latin-supplement.
             // https://www.charbase.com/block/latin-supplement
-            $output = preg_replace_callback("@[\x80-\x9F]@", function($matches) {
+            $output = preg_replace_callback("@[\x80-\x9F]@", function ($matches) {
               return '&#' . ord($matches[0]) . ';';
             }, $output);
           }
