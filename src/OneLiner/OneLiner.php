@@ -41,8 +41,14 @@ class OneLiner {
     if (!is_string($html) || $html == '') {
       return TRUE;
     }
-    if (stripos($html, '<img') !== FALSE) {
+    if (preg_match('@<(?:img|button|iframe)@is', $html)) {
       return FALSE;
+    }
+    if (stripos($html, '<input') !== FALSE) {
+      $html = preg_replace('@<input[^>]*type="hidden"[^>]*>@si', '', $html);
+      if (stripos($html, '<input') !== FALSE) {
+        return FALSE;
+      }
     }
     $html = trim(strtr(strip_tags($html), array(
       '&nbsp;' => '',
