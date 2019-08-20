@@ -98,7 +98,7 @@ class OneLiner {
       return $content;
     }
 
-    // Just a tag name.
+    // Just a tag name. Separate from logic below for improved speed.
     if (preg_match('@^[a-z0-9]+$@si', $wrapper)) {
       if (isset($attrs)) {
         $output = "<$wrapper" . self::attributes($attrs)
@@ -107,6 +107,31 @@ class OneLiner {
       else {
         $output = "<$wrapper>$content</$wrapper>";
       }
+      return $output;
+    }
+
+    // Tag name with CSS-style attributes.
+    if (preg_match('@^(?<tag>[a-z0-9]+)[#\.][a-z0-9#\.]+$@si', $wrapper, $arr)) {
+      $attrs = isset($attrs) ? (array) $attrs : array();
+      $tmp = substr($wrapper, strlen($arr['tag']));
+      $wrapper = $arr['tag'];
+      while (preg_match('@^(?<type>[#\.])(?<value>[^#\.]+)(?:[#\.]|$)@s', $tmp, $arr)) {
+        $tmp = substr($tmp, 1 + strlen($arr['value']));
+        switch ($arr['type']) {
+          case '#':
+            $attrs['id'] = $arr['value'];
+            break;
+          case '.':
+            if (!isset($attrs['class']) || strlen($attrs['class']) == 0) {
+              $attrs['class'] = $arr['value'];
+            }
+            else {
+              $attrs['class'] = $arr['value'];
+            }
+            break;
+        }
+      }
+      $output = "<$wrapper" . self::attributes($attrs) . ">$content</$wrapper>";
       return $output;
     }
 
