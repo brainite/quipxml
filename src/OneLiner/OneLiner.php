@@ -107,11 +107,9 @@ class OneLiner {
       else {
         $output = "<$wrapper>$content</$wrapper>";
       }
-      return $output;
     }
-
     // Tag name with CSS-style attributes.
-    if (preg_match('@^(?<tag>[a-z0-9]+)[#\.][a-z0-9#\.]+$@si', $wrapper, $arr)) {
+    elseif (preg_match('@^(?<tag>[a-z0-9]+)[#\.][a-z0-9#\.]+$@si', $wrapper, $arr)) {
       $attrs = isset($attrs) ? (array) $attrs : array();
       $tmp = substr($wrapper, strlen($arr['tag']));
       $wrapper = $arr['tag'];
@@ -132,11 +130,9 @@ class OneLiner {
         }
       }
       $output = "<$wrapper" . self::attributes($attrs) . ">$content</$wrapper>";
-      return $output;
     }
-
     // Handle opening tags.
-    if (strpos($wrapper, '<') !== FALSE) {
+    elseif (strpos($wrapper, '<') !== FALSE) {
       $output = $wrapper . $content;
       $parts = explode('<', $wrapper);
       array_shift($parts);
@@ -165,11 +161,13 @@ class OneLiner {
           }
         }
       }
-      return $output;
+    }
+    // If nothing works, then simply prepend the wrapper.
+    else {
+      $output = $wrapper . $content;
     }
 
-    // If nothing works, then simply prepend the wrapper.
-    $output = $wrapper . $content;
+    return $output;
   }
 
 }
