@@ -1,7 +1,7 @@
 QuipXml
 =======
 
-[![Build Status](https://travis-ci.org/stackpr/quipxml.png?branch=master)](https://travis-ci.org/stackpr/quipxml)
+[![Build Status](https://travis-ci.org/brainite/quipxml.png?branch=master)](https://travis-ci.org/brainite/quipxml)
 
 QuipXml is chainable PHP objects for manipulating XML modeled after jQuery.
 
