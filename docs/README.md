@@ -3,9 +3,11 @@ QuipXml
 
 [![Build Status](https://travis-ci.org/brainite/quipxml.png?branch=master)](https://travis-ci.org/brainite/quipxml)
 
-QuipXml is chainable PHP objects for manipulating XML modeled after jQuery.
-
-**Although this is being developed with unit tests, this is still alpha. Method names may be subject to change.**
+QuipXml is chainable PHP objects for manipulating XML.
+Unlike other libraries that attempt to replicate jQuery syntax throughout,
+Quip attempts to provide lightweight extensions to SimpleXML to facilitate
+cleaner code without imposing JavaScript conventions on a PHP project.
+The end result is fast and easy to use.
 
 Basic Usage
 -----------
