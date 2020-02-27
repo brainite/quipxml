@@ -1,16 +1,16 @@
 {
-    "name":"wittiws/quipxml",
+    "name":"brainite/quipxml",
     "type":"library",
     "description":"Enhanced SimpleXml-based toolkit",
     "keywords":[
         "xml"
     ],
-    "homepage":"https://github.com/wittiws/quipxml",
+    "homepage":"https://github.com/brainite/quipxml",
     "license":"MIT",
     "authors":[
         {
             "name":"Greg Payne",
-            "homepage":"http://www.witti.ws/",
+            "homepage":"https://brainite.org/",
             "role":"Packager"
         }
     ],
