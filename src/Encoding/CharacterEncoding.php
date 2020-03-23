@@ -745,22 +745,6 @@ class CharacterEncoding {
       }
     }
 
-    // Transliterate any remaining entities to ASCII when possible.
-    //   (i.e., remove accents)
-    if ($params['transliterate_ascii'] && strpos($output, '&') !== FALSE) {
-      if (strpos($output, '&#') !== FALSE) {
-        $output = strtr($output, self::getEntitiesMap('TRANSLITERATE_ASCII', self::MODE_ENTITYDEC_NAME));
-      }
-      if (strpos($output, '&') !== FALSE) {
-        $html = self::getEntitiesMap('HTMLLAT1', self::MODE_ORDINAL_NAME);
-        foreach (self::getEntitiesMap('TRANSLITERATE_ASCII', self::MODE_ORDINAL_NAME) as $k => $v) {
-          if (isset($html[$k])) {
-            $output = str_replace("&{$html[$k]};", $v, $output);
-          }
-        }
-      }
-    }
-
     // Replace < > to disable tags.
     switch ($params['tags']) {
       case 'ignore':
@@ -786,6 +770,23 @@ class CharacterEncoding {
     if ($params['entities_prefer_numeric']) {
       if (strpos($output, '&') !== FALSE) {
         $output = strtr($output, self::getEntitiesMap(NULL, self::MODE_ENTITYNAME_ENTITYDEC));
+      }
+    }
+
+    // Transliterate any remaining entities to ASCII when possible.
+    // This MUST happen after the numeric entity conversion.
+    //   (i.e., remove accents)
+    if ($params['transliterate_ascii'] && strpos($output, '&') !== FALSE) {
+      if (strpos($output, '&#') !== FALSE) {
+        $output = strtr($output, self::getEntitiesMap('TRANSLITERATE_ASCII', self::MODE_ENTITYDEC_NAME));
+      }
+      if (strpos($output, '&') !== FALSE) {
+        $html = self::getEntitiesMap('HTMLLAT1', self::MODE_ORDINAL_NAME);
+        foreach (self::getEntitiesMap('TRANSLITERATE_ASCII', self::MODE_ORDINAL_NAME) as $k => $v) {
+          if (isset($html[$k])) {
+            $output = str_replace("&{$html[$k]};", $v, $output);
+          }
+        }
       }
     }
 
