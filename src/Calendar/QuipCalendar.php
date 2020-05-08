@@ -50,7 +50,7 @@ class QuipCalendar {
     $ical = implode("\n", array(
       'BEGIN:VCALENDAR',
       'VERSION:2.0',
-      'PRODID:QuipCalendar',
+      'PRODID:-//Brainite//QuipCalendar 1.0//EN',
       'CALSCALE:GREGORIAN',
       'UID:' . $defaults['uid'],
       'X-WR-CALNAME:' . $defaults['name'],
