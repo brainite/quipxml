@@ -97,18 +97,25 @@ class QuipCalendarIcsFormatter extends QuipXmlFormatter {
     $number_children = 0;
     $override_value = $this->getFormattedTagOverrideChildren($xml, $tag);
     if ($override_value === FALSE) {
-      $output2 = '';
+      // Sort output by groups:
+      //   1. x-*
+      //   2. other
+      //   3. items with children
+      $output2 = $output3 = '';
       foreach ($xml->children() as $child) {
         ++$number_children;
         $tmp = $this->getFormattedRecursiveIterator($child, $child->getName());
         if (preg_match('@^x-.*-@i', $child->getName())) {
           $output .= $tmp;
         }
+        elseif (preg_match('@^BEGIN:@s', $tmp)) {
+          $output3 .= $tmp;
+        }
         else {
           $output2 .= $tmp;
         }
       }
-      $output .= $output2;
+      $output .= $output2 . $output3;
       unset($override_value);
     }
 
