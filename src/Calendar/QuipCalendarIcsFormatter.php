@@ -33,12 +33,14 @@ class QuipCalendarIcsFormatter extends QuipXmlFormatter {
         $vevent->dtend = strftime('%Y%m%dT%H%M%S', strtotime($dtend) + 60);
       }
     }
+
+    return $this;
   }
 
   protected function &fixUid(&$xml) {
     if ($this->settings['fix_uid_length']) {
       // Limit uid length to 71 (75-char line minus "UID:")
-      $uid = &$xml->xpath('/iCalendar/vcalendar/uid');
+      $uid = $xml->xpath('/iCalendar/vcalendar/uid');
       $val = $uid->html();
       if (strlen($val) > 71) {
         if (strpos($val, '@') === FALSE) {

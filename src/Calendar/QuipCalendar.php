@@ -20,7 +20,8 @@ class QuipCalendar {
     }
 
     // Initialize the XML object using an empty iCal element.
-    $dom = &\DOMDocument::loadXML('<iCalendar xmlns:xCal="http://ietf.org/rfc/rfcXXXX.txt"></iCalendar>');
+    $xml = '<iCalendar xmlns:xCal="http://ietf.org/rfc/rfcXXXX.txt"></iCalendar>';
+    $dom = \DOMDocument::loadXML($xml);
 
     // Strip off the bad white space.
     $source = trim(preg_replace("@[\n\r]+@s", "\n", $source));
@@ -79,8 +80,8 @@ class QuipCalendar {
     }
 
     // If it is not a 'begin' entry, then it is a one-line "element".
-    if ($el['component'] != 'begin') {
-      $node = &$doc->createElement($el['component'], str_replace('&', '&amp;', $el['content']));
+    if (!isset($el['component']) || $el['component'] !== 'begin') {
+      $node = $doc->createElement($el['component'], str_replace('&', '&amp;', $el['content']));
       foreach ($el AS $k => $v) {
         if (($k != 'component') && ($k != 'content')) {
           $node->setAttribute(strToLower($k), $v);
@@ -91,7 +92,8 @@ class QuipCalendar {
     }
 
     // Start the new node.
-    $node = &$doc->createElement(strToLower($el['content']));
+    $tmp = strToLower($el['content']);
+    $node = $doc->createElement($tmp);
     foreach ($el AS $k => $v) {
       if (($k != 'component') && ($k != 'content')) {
         $node->setAttribute(strToLower($k), $v);
