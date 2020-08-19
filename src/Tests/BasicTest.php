@@ -18,6 +18,14 @@ class BasicTest extends \PHPUnit_Framework_TestCase {
     $this->formatter = Quip::formatter();
   }
 
+  public function testCount() {
+    $quip = Quip::load(__DIR__ . '/Resources/XmlBasicList.xml', 0, TRUE);
+
+    $this->assertEquals(sizeof($quip->xpath('//original')), 1);
+    $this->assertEquals(sizeof($quip->xpath('//original/x')), 0);
+    $this->assertEquals(sizeof($quip->xpath('//original/x[1]')), 0);
+  }
+
   public function testXmlBasicList() {
     $formatter = $this->formatter;
 

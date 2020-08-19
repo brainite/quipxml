@@ -114,16 +114,16 @@ class QuipXmlElement extends \SimpleXMLElement {
     return FALSE;
   }
 
-  public function get($path) {
+  public function get($xpath) {
     // Break the parts and look for the cursor that exists.
-    $parts = explode('/', $path);
+    $parts = explode('/', $xpath);
     $path = $prev = array_shift($parts);
     $cursor = $this;
     while (TRUE) {
       if (preg_match('@[^/]@', $path)) {
         $match = $this->xpath($path);
-        if (sizeof($match) >= 1) {
-          $cursor = $match->getInnerIterator()->current();
+        if (!empty($match)) {
+          $cursor = $match->current();
         }
         else {
           array_unshift($parts, $prev);
@@ -146,14 +146,21 @@ class QuipXmlElement extends \SimpleXMLElement {
     foreach ($parts as $part) {
       if (strpos($part, '[') !== FALSE) {
         if (preg_match('@^(?<name>.*)\[(?<pos>\d+)\]@s', $part, $arr)) {
+          $found = FALSE;
           $limit = (int) $arr['pos'];
-          while ($limit-- >= 0) {
-            $cursor->addChild($arr['name']);
+          while (--$limit >= 0) {
+            $new = $cursor->addChild($arr['name']);
             $match = $cursor->xpath($part);
-            if (sizeof($match) >= 1) {
-              $cursor = $match->getInnerIterator()->current();
+            if (!empty($match)) {
+              $found = TRUE;
+              $cursor = $new;
               break;
             }
+          }
+
+          if (!$found) {
+            throw new \ErrorException("Unable to build XML part ($part) for path ($xpath)."
+              . $cursor->htmlOuter() . get_class($cursor));
           }
         }
         else {

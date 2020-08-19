@@ -9,7 +9,7 @@
  */
 
 namespace QuipXml\Xml;
-class QuipXmlElementIterator extends \IteratorIterator {
+class QuipXmlElementIterator extends \IteratorIterator implements \Countable {
   public function __construct($iterator) {
     $arr = array();
     $prevs = array();
@@ -28,6 +28,7 @@ class QuipXmlElementIterator extends \IteratorIterator {
     }
     $it = new \ArrayIterator($arr);
     parent::__construct($it);
+    $this->rewind();
   }
 
   public function __get($name) {
@@ -108,6 +109,18 @@ class QuipXmlElementIterator extends \IteratorIterator {
 
   public function before($content) {
     return $this->_eachSetter('before', $content);
+  }
+
+  public function count() {
+    $count = 0;
+    foreach ($this as $tmp) {
+      if ($count === 0 && !$tmp) {
+        return 0;
+      }
+      ++$count;
+    }
+    $this->rewind();
+    return $count;
   }
 
   public function eq($index = 0) {
