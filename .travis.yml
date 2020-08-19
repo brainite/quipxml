@@ -12,12 +12,11 @@ matrix:
       env: PHPUNITVER=5.7
     - php: 7.1
       env: PHPUNITVER=5.7
-    - php: hhvm-3.21
-      env: PHPUNITVER=5.7 HHVM=true
+    - php: 7.4
+      env: PHPUNITVER=5.7
     - php: hhvm-3.24
       env: PHPUNITVER=5.7 HHVM=true
 #  allow_failures:
-#    - php: hhvm-3.21
 #    - php: hhvm-3.24
 
 before_install:

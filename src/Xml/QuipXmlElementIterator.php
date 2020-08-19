@@ -201,7 +201,7 @@ class QuipXmlElementIterator extends \IteratorIterator {
    * @return QuipXmlElementIterator
    */
   public function xpath($path) {
-    if ($path{0} === '/') {
+    if ($path[0] === '/') {
       $this->rewind();
       if ($this->valid()) {
         return $this->current()->xpath($path);

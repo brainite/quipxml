@@ -138,7 +138,7 @@ class OneLiner {
       array_shift($parts);
       $closed = array();
       foreach (array_reverse($parts) as $part) {
-        if ($part{0} === '/') {
+        if ($part[0] === '/') {
           if (preg_match('@^/([^>]*)>@s', $part, $arr)) {
             $tag = trim($arr[1]);
             if (!isset($closed[$tag])) {
