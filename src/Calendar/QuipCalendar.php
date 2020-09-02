@@ -21,7 +21,8 @@ class QuipCalendar {
 
     // Initialize the XML object using an empty iCal element.
     $xml = '<iCalendar xmlns:xCal="http://ietf.org/rfc/rfcXXXX.txt"></iCalendar>';
-    $dom = \DOMDocument::loadXML($xml);
+    $dom = new \DOMDocument;
+    $dom->loadXML($xml);
 
     // Strip off the bad white space.
     $source = trim(preg_replace("@[\n\r]+@s", "\n", $source));

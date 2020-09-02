@@ -22,7 +22,8 @@ class QuipContact extends QuipCalendar {
 
     // Initialize the XML object using an empty vcard.
     // This is NOT an xCard: https://tools.ietf.org/html/rfc6351
-    $dom = &\DOMDocument::loadXML('<vcards/>');
+    $dom = new \DOMDocument;
+    $dom->loadXML('<vcards/>');
 
     // Strip off the bad white space.
     $source = trim(preg_replace("@[\n\r]+@s", "\n", $source));
