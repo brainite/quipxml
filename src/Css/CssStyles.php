@@ -23,7 +23,10 @@ class CssStyles {
     return $this;
   }
 
-  public function get($property) {
+  public function get($property = NULL) {
+    if (!isset($property)) {
+      return $this->styles;
+    }
     $property = $this->property($property);
     if (isset($this->styles[$property])) {
       return $this->styles[$property];
