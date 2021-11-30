@@ -1,7 +1,7 @@
 QuipXml
 =======
 
-[![Build Status](https://api.travis-ci.com/brainite/quipxml.svg?branch=master)](https://app.travis-ci.com/github/brainite/quipxml)
+[![CI](https://github.com/brainite/quipxml/actions/workflows/ci.yml/badge.svg)](https://github.com/brainite/quipxml/actions/workflows/ci.yml)
 
 QuipXml is chainable PHP objects for manipulating XML.
 Unlike other libraries that attempt to replicate jQuery syntax throughout,
