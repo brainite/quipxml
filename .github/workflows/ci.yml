@@ -27,7 +27,7 @@ jobs:
       - uses: php-actions/composer@v5
       
       # Run phpunit
-      - uses: php-actions/phpunit@v5.7
+      - uses: php-actions/phpunit@v5
 
       # Runs a single command using the runners shell
       #- name: Run a one-line script
