@@ -28,3 +28,5 @@ jobs:
       
       # Run phpunit
       - uses: php-actions/phpunit@v5
+        with:
+          php_version: 7.4
