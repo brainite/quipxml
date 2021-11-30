@@ -1,4 +1,4 @@
-name: CI
+name: Build Status
 
 # Controls when the workflow will run
 on:
@@ -27,7 +27,7 @@ jobs:
       - uses: php-actions/composer@v5
       
       # Run phpunit
-      - uses: php-actions/phpunit@v3
+      - uses: php-actions/phpunit@v5.7
 
       # Runs a single command using the runners shell
       #- name: Run a one-line script
