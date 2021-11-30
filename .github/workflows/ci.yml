@@ -27,4 +27,4 @@ jobs:
       - uses: php-actions/composer@v5
       
       # Run phpunit
-      - uses: php-actions/phpunit@v4
+      - uses: php-actions/phpunit@v5
