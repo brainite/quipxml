@@ -11,7 +11,7 @@
 namespace QuipXml\Tests;
 
 use QuipXml\Quip;
-class PerformanceTest extends \PHPUnit_Framework_TestCase {
+class PerformanceTest extends \PHPUnit\Framework\TestCase {
   public function testMultipleReferences() {
     // Document how much memory is used when additional iterators are instantiated.
     $quip = Quip::load(__DIR__ . '/Resources/XmlBasicList.xml', 0, TRUE);
