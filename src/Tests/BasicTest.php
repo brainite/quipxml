@@ -11,7 +11,7 @@
 namespace QuipXml\Tests;
 
 use QuipXml\Quip;
-class BasicTest extends \PHPUnit_Framework_TestCase {
+class BasicTest extends \PHPUnit\Framework\TestCase {
   protected $formatter = NULL;
   public function __construct() {
     parent::__construct();

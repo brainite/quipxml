@@ -11,7 +11,7 @@
 namespace QuipXml\Tests;
 
 use QuipXml\Encoding\CharacterEncoding;
-class CharacterEncodingTest extends \PHPUnit_Framework_TestCase {
+class CharacterEncodingTest extends \PHPUnit\Framework\TestCase {
   public function testAsciiTransliteration() {
     $test = "—’–";
     $expected = "-'-";
