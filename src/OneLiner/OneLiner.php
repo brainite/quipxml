@@ -100,12 +100,22 @@ class OneLiner {
 
     // Just a tag name. Separate from logic below for improved speed.
     if (preg_match('@^[a-z0-9]+$@si', $wrapper)) {
-      if (isset($attrs)) {
-        $output = "<$wrapper" . self::attributes($attrs)
-          . ">$content</$wrapper>";
+      if (strpos(' img ', " $wrapper ") !== FALSE && trim($content) === '') {
+        if (isset($attrs)) {
+          $output = "<$wrapper" . self::attributes($attrs) . " />";
+        }
+        else {
+          $output = "<$wrapper />";
+        }
       }
       else {
-        $output = "<$wrapper>$content</$wrapper>";
+        if (isset($attrs)) {
+          $output = "<$wrapper" . self::attributes($attrs)
+            . ">$content</$wrapper>";
+        }
+        else {
+          $output = "<$wrapper>$content</$wrapper>";
+        }
       }
     }
     // Tag name with CSS-style attributes.
@@ -129,7 +139,13 @@ class OneLiner {
             break;
         }
       }
-      $output = "<$wrapper" . self::attributes($attrs) . ">$content</$wrapper>";
+      if (strpos(' img ', " $wrapper ") !== FALSE && trim($content) === '') {
+        $output = "<$wrapper" . self::attributes($attrs) . " />";
+      }
+      else {
+        $output = "<$wrapper" . self::attributes($attrs)
+          . ">$content</$wrapper>";
+      }
     }
     // Handle opening tags.
     elseif (strpos($wrapper, '<') !== FALSE) {
