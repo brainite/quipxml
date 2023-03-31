@@ -119,7 +119,7 @@ class OneLiner {
       }
     }
     // Tag name with CSS-style attributes.
-    elseif (preg_match('@^(?<tag>[a-z0-9]+)[#\.][a-z0-9#\.]+$@si', $wrapper, $arr)) {
+    elseif (preg_match('@^(?<tag>[a-z0-9]+)[#\.][a-z0-9#\.\-]+$@si', $wrapper, $arr)) {
       $attrs = isset($attrs) ? (array) $attrs : array();
       $tmp = substr($wrapper, strlen($arr['tag']));
       $wrapper = $arr['tag'];
