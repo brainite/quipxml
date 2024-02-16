@@ -93,6 +93,21 @@ class QuipXmlElement extends \SimpleXMLElement {
   }
 
   /**
+   * Add the content at the end of this node.
+   * @param mixed $content
+   * @return \QuipXml\Xml\QuipXmlElement
+   */
+  public function append($content) {
+    if (FALSE === (bool) $this) {
+      return $this;
+    }
+    $me = $this->dom();
+    $new = $this->_contentToDom($content);
+    $me->appendChild($new);
+    return $this;
+  }
+
+  /**
    * Add the content before this node.
    * @param int $index
    * @return \QuipXml\Xml\QuipXmlElement
