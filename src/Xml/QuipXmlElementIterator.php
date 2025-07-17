@@ -99,7 +99,7 @@ class QuipXmlElementIterator extends \IteratorIterator implements \Countable {
    * @return QuipXmlElementIterator    The addChild method returns a QuipXmlElementIterator
    *                                   object representing the child(ren) added to the XML node(s).
    */
-  public function addChild($name, $value = null, $namespace = null) {
+  public function addChild($name, $value = NULL, $namespace = NULL) {
     return $this->_eachGetIterator('addChild', $name, $value, $namespace);
   }
 
@@ -111,7 +111,7 @@ class QuipXmlElementIterator extends \IteratorIterator implements \Countable {
     return $this->_eachSetter('before', $content);
   }
 
-  public function count() {
+  public function count(): int {
     $count = 0;
     foreach ($this as $tmp) {
       if ($count === 0 && !$tmp) {
