@@ -10,6 +10,7 @@
 
 namespace QuipXml;
 
+use QuipXml\Encoding\CharacterEncoding;
 use QuipXml\Xml\QuipXmlElement;
 use QuipXml\Xml\QuipXmlFormatter;
 class Quip {
@@ -94,7 +95,16 @@ class Quip {
         ));
         $dom = new \DOMDocument();
         if (version_compare(PHP_VERSION, '5.4.0') >= 0) {
-          $dom->loadHTML($data, $options);
+          try {
+            $dom->loadHTML($data, $options);
+          }
+          catch (\Exception $e) {
+            $data = CharacterEncoding::toHtml($data, [
+              'entities_prefer_numeric' => FALSE,
+              'escape_ampersand_selective' => TRUE,
+            ]);
+            $dom->loadHTML($data, $options);
+          }
 
           if (preg_match('@<html.*<body@si', $data)) {
             $cursor = &$dom;
