@@ -85,7 +85,8 @@ class Quip {
         ));
       }
       $quip = new QuipXmlElement($source, $options, $data_is_url, $ns, $is_prefix);
-    } catch (\Exception $e) {
+    }
+    catch (\Exception $e) {
       try {
         $data = $data_is_url ? file_get_contents($source) : $source;
         $data = strtr($data, array(
@@ -102,8 +103,14 @@ class Quip {
             $cursor = &$dom->getElementsByTagName('body')->item(0);
           }
           else {
+            // If there is no single root element, wrap the HTML and try again.
+            $children = &$dom->getElementsByTagName('body')->item(0)->childNodes;
+            if ($children->count() > 1) {
+              return static::load("<div>$data</div>", $options, FALSE, $ns, $is_prefix, $quip_options);
+            }
+
             // hhvm returns the root by default rather than the original imported item.
-            $cursor = &$dom->getElementsByTagName('body')->item(0)->childNodes->item(0);
+            $cursor = $children->item(0);
           }
         }
         else {
@@ -111,7 +118,8 @@ class Quip {
           $cursor = &$dom;
         }
         $quip = simplexml_import_dom($cursor, '\\QuipXml\\Xml\\QuipXmlElement');
-      } catch (\Exception $e) {
+      }
+      catch (\Exception $e) {
         $return();
         throw $e;
       }
