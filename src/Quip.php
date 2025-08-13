@@ -33,7 +33,7 @@ class Quip {
    * @return \QuipXml\Xml\QuipXmlElement
    */
   static public function load($source, $options = 0, $data_is_url = FALSE, $ns = '', $is_prefix = FALSE, $quip_options = 0) {
-    set_error_handler(function ($errno, $errstr, $errfile, $errline, $errcontext) {
+    set_error_handler(function ($errno, $errstr, $errfile, $errline) {
       throw new \ErrorException($errstr, $errno);
     }, E_WARNING);
     $error_reporting_level = error_reporting();
