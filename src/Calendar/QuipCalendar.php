@@ -117,7 +117,6 @@ class QuipCalendar {
    * @return int
    *   The status code: 0 when an element was added, 1 at the parent's END.
    */
-  // phpcs:ignore Drupal.NamingConventions.ValidFunctionName.ScopeNotCamelCaps -- a public API name that predates the standard; renaming it would break callers.
   public static function loadICalElement(\DOMNode &$xml, array &$lines, int &$i): int {
     // Get the first entry.
     $el = QuipCalendar::getICalEntry($lines, $i);
@@ -180,7 +179,6 @@ class QuipCalendar {
    *   one entry per parameter keyed by its lower-case name; empty when the
    *   line has no colon.
    */
-  // phpcs:ignore Drupal.NamingConventions.ValidFunctionName.ScopeNotCamelCaps -- a public API name that predates the standard; renaming it would break callers.
   public static function getICalEntry(array &$lines, int &$i): array {
     // If there is no colon, then stop now. The cast keeps the coercion of a
     // line past the end that predates strict types.

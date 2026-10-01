@@ -567,7 +567,6 @@ class QuipXmlElement extends \SimpleXMLElement implements QuipXmlElementInterfac
    * addChild(). Nodes SimpleXML makes itself, by property access or by
    * iterating a SimpleXML list, start without it.
    */
-  // phpcs:ignore Drupal.NamingConventions.ValidFunctionName.ScopeNotCamelCaps -- SimpleXMLElement::registerXPathNamespace() names it.
   public function registerXPathNamespace(string $prefix, string $namespace): bool {
     if (!parent::registerXPathNamespace($prefix, $namespace)) {
       return FALSE;

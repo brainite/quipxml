@@ -98,7 +98,6 @@ interface QuipXmlElementInterface extends \Countable, \Stringable, \Traversable 
    *   The XML, or whether the file was written; FALSE on failure or when
    *   there is no node.
    */
-  // phpcs:ignore Drupal.NamingConventions.ValidFunctionName.ScopeNotCamelCaps -- SimpleXMLElement::asXML() names it.
   public function asXML(?string $filename = NULL): string|bool;
 
   /**
@@ -285,7 +284,6 @@ interface QuipXmlElementInterface extends \Countable, \Stringable, \Traversable 
    * @return bool
    *   Whether every node registered it.
    */
-  // phpcs:ignore Drupal.NamingConventions.ValidFunctionName.ScopeNotCamelCaps -- SimpleXMLElement::registerXPathNamespace() names it.
   public function registerXPathNamespace(string $prefix, string $namespace): bool;
 
   /**
@@ -305,7 +303,6 @@ interface QuipXmlElementInterface extends \Countable, \Stringable, \Traversable 
    * @return string|bool
    *   The XML, or whether the file was written; FALSE on failure.
    */
-  // phpcs:ignore Drupal.NamingConventions.ValidFunctionName.ScopeNotCamelCaps -- SimpleXMLElement::saveXML() names it.
   public function saveXML(?string $filename = NULL): string|bool;
 
   /**

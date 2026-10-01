@@ -110,7 +110,7 @@ Development
 
 ```` sh
 composer install
-composer lint      # PHP_CodeSniffer, Drupal standard
+composer lint      # PHP_CodeSniffer: strict_types in every file
 composer analyse   # PHPStan level 8
 composer test      # PHPUnit; `vendor/bin/phpunit --group benchmark` for the memory benchmark
 ````

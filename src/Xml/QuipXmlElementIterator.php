@@ -250,7 +250,6 @@ class QuipXmlElementIterator extends \IteratorIterator implements QuipXmlElement
   /**
    * {@inheritdoc}
    */
-  // phpcs:ignore Drupal.NamingConventions.ValidFunctionName.ScopeNotCamelCaps -- SimpleXMLElement::asXML() names it.
   public function asXML(?string $filename = NULL): string|bool {
     $xml = $this->singleGetter(static fn (QuipXmlElement $node) => $filename === NULL ? $node->asXML() : $node->asXML($filename));
     return is_string($xml) || is_bool($xml) ? $xml : FALSE;
@@ -358,7 +357,6 @@ class QuipXmlElementIterator extends \IteratorIterator implements QuipXmlElement
   /**
    * {@inheritdoc}
    */
-  // phpcs:ignore Drupal.NamingConventions.ValidFunctionName.ScopeNotCamelCaps -- SimpleXMLElement::registerXPathNamespace() names it.
   public function registerXPathNamespace(string $prefix, string $namespace): bool {
     $registered = TRUE;
     foreach ($this->nodes as $node) {
@@ -381,7 +379,6 @@ class QuipXmlElementIterator extends \IteratorIterator implements QuipXmlElement
   /**
    * {@inheritdoc}
    */
-  // phpcs:ignore Drupal.NamingConventions.ValidFunctionName.ScopeNotCamelCaps -- SimpleXMLElement::saveXML() names it.
   public function saveXML(?string $filename = NULL): string|bool {
     return $this->asXML($filename);
   }

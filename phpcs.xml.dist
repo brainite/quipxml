@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <ruleset name="QuipXml">
-  <description>Drupal coding standards for QuipXml</description>
+  <description>Coding standard checks for QuipXml</description>
 
   <file>src</file>
   <file>tests</file>
@@ -10,19 +10,5 @@
   <arg value="sp"/>
   <arg value="n"/>
 
-  <!-- Every file opens with the package's MIT license block, which the
-       Drupal standard reads as a file doc comment before the namespace. -->
-  <rule ref="Drupal">
-    <exclude name="Drupal.Commenting.FileComment.NamespaceNoFileDoc"/>
-  </rule>
-  <rule ref="DrupalPractice"/>
   <rule ref="Generic.PHP.RequireStrictTypes"/>
-
-  <rule ref="Drupal.Commenting.Deprecated.IncorrectTextLayout">
-    <severity>0</severity>
-  </rule>
-
-  <rule ref="Drupal.Commenting.Deprecated.DeprecatedWrongSeeUrlFormat">
-    <severity>0</severity>
-  </rule>
 </ruleset>
