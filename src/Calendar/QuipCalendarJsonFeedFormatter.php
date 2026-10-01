@@ -30,10 +30,7 @@ use QuipXml\Xml\QuipXmlElement;
 class QuipCalendarJsonFeedFormatter extends QuipCalendarIcsFormatter {
 
   /**
-   * Creates a formatter.
-   *
-   * @param array<string, bool>|null $settings
-   *   Settings that override the defaults, including `fix_uid_length`.
+   * @inheritDoc
    */
   public function __construct(?array $settings = NULL) {
     $this->settings = array_merge($this->settings, [

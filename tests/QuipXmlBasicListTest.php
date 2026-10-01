@@ -33,7 +33,7 @@ final class QuipXmlBasicListTest extends TestCase {
   private QuipXmlFormatter $formatter;
 
   /**
-   * {@inheritdoc}
+   * @inheritDoc
    */
   protected function setUp(): void {
     parent::setUp();

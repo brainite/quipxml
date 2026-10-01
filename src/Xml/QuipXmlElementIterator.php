@@ -220,35 +220,35 @@ class QuipXmlElementIterator extends \IteratorIterator implements QuipXmlElement
   }
 
   /**
-   * {@inheritdoc}
+   * @inheritDoc
    */
   public function addAttribute(string $qualifiedName, string $value, ?string $namespace = NULL): void {
     $this->eachSetter(static fn (QuipXmlElement $node) => $node->addAttribute($qualifiedName, $value, $namespace));
   }
 
   /**
-   * {@inheritdoc}
+   * @inheritDoc
    */
   public function addChild(string $qualifiedName, ?string $value = NULL, ?string $namespace = NULL): QuipXmlElement|QuipXmlElementIterator {
     return $this->eachGetIterator(static fn (QuipXmlElement $node) => $node->addChild($qualifiedName, $value, $namespace));
   }
 
   /**
-   * {@inheritdoc}
+   * @inheritDoc
    */
   public function after(string|\SimpleXMLElement|\DOMNode $content): static {
     return $this->eachSetter(static fn (QuipXmlElement $node) => $node->after($content));
   }
 
   /**
-   * {@inheritdoc}
+   * @inheritDoc
    */
   public function append(string|\SimpleXMLElement|\DOMNode $content): static {
     return $this->eachSetter(static fn (QuipXmlElement $node) => $node->append($content));
   }
 
   /**
-   * {@inheritdoc}
+   * @inheritDoc
    */
   public function asXML(?string $filename = NULL): string|bool {
     $xml = $this->singleGetter(static fn (QuipXmlElement $node) => $filename === NULL ? $node->asXML() : $node->asXML($filename));
@@ -256,56 +256,56 @@ class QuipXmlElementIterator extends \IteratorIterator implements QuipXmlElement
   }
 
   /**
-   * {@inheritdoc}
+   * @inheritDoc
    */
   public function attributes(?string $namespaceOrPrefix = NULL, bool $isPrefix = FALSE): QuipXmlElement|QuipXmlElementIterator {
     return $this->eachGetIterator(static fn (QuipXmlElement $node) => $node->attributes($namespaceOrPrefix, $isPrefix), TRUE);
   }
 
   /**
-   * {@inheritdoc}
+   * @inheritDoc
    */
   public function before(string|\SimpleXMLElement|\DOMNode $content): static {
     return $this->eachSetter(static fn (QuipXmlElement $node) => $node->before($content));
   }
 
   /**
-   * {@inheritdoc}
+   * @inheritDoc
    */
   public function children(?string $namespaceOrPrefix = NULL, bool $isPrefix = FALSE): QuipXmlElement|QuipXmlElementIterator {
     return $this->eachGetIterator(static fn (QuipXmlElement $node) => $node->children($namespaceOrPrefix, $isPrefix), TRUE);
   }
 
   /**
-   * {@inheritdoc}
+   * @inheritDoc
    */
   public function count(): int {
     return count($this->nodes);
   }
 
   /**
-   * {@inheritdoc}
+   * @inheritDoc
    */
   public function dom(int $index = 0): \DOMNode|false {
     return $this->eq($index)->dom();
   }
 
   /**
-   * {@inheritdoc}
+   * @inheritDoc
    */
   public function eq(int $index = 0): QuipXmlElement {
     return $this->nodes[$index] ?? $this->getEmptyElement();
   }
 
   /**
-   * {@inheritdoc}
+   * @inheritDoc
    */
   public function get(string $path): QuipXmlElement|QuipXmlElementIterator {
     return $this->eachGetIterator(static fn (QuipXmlElement $node) => $node->get($path));
   }
 
   /**
-   * {@inheritdoc}
+   * @inheritDoc
    */
   public function getDocNamespaces(bool $recursive = FALSE, bool $fromRoot = TRUE): array {
     $namespaces = [];
@@ -316,14 +316,14 @@ class QuipXmlElementIterator extends \IteratorIterator implements QuipXmlElement
   }
 
   /**
-   * {@inheritdoc}
+   * @inheritDoc
    */
   public function getName(): string {
     return isset($this->nodes[0]) ? $this->nodes[0]->getName() : '';
   }
 
   /**
-   * {@inheritdoc}
+   * @inheritDoc
    */
   public function getNamespaces(bool $recursive = FALSE): array {
     $namespaces = [];
@@ -334,7 +334,7 @@ class QuipXmlElementIterator extends \IteratorIterator implements QuipXmlElement
   }
 
   /**
-   * {@inheritdoc}
+   * @inheritDoc
    *
    * @phpstan-return ($content is null|\QuipXml\Xml\QuipXmlFormatter ? string : static)
    */
@@ -347,7 +347,7 @@ class QuipXmlElementIterator extends \IteratorIterator implements QuipXmlElement
   }
 
   /**
-   * {@inheritdoc}
+   * @inheritDoc
    */
   public function htmlOuter(?QuipXmlFormatter $formatter = NULL): string {
     $html = $this->singleGetter(static fn (QuipXmlElement $node) => $node->htmlOuter($formatter));
@@ -355,7 +355,7 @@ class QuipXmlElementIterator extends \IteratorIterator implements QuipXmlElement
   }
 
   /**
-   * {@inheritdoc}
+   * @inheritDoc
    */
   public function registerXPathNamespace(string $prefix, string $namespace): bool {
     $registered = TRUE;
@@ -366,7 +366,7 @@ class QuipXmlElementIterator extends \IteratorIterator implements QuipXmlElement
   }
 
   /**
-   * {@inheritdoc}
+   * @inheritDoc
    */
   public function remove(): bool {
     $removed = FALSE;
@@ -377,21 +377,21 @@ class QuipXmlElementIterator extends \IteratorIterator implements QuipXmlElement
   }
 
   /**
-   * {@inheritdoc}
+   * @inheritDoc
    */
   public function saveXML(?string $filename = NULL): string|bool {
     return $this->asXML($filename);
   }
 
   /**
-   * {@inheritdoc}
+   * @inheritDoc
    */
   public function setTag(string $tag): QuipXmlElement|QuipXmlElementIterator {
     return $this->eachGetIterator(static fn (QuipXmlElement $node) => $node->setTag($tag));
   }
 
   /**
-   * {@inheritdoc}
+   * @inheritDoc
    *
    * @phpstan-return ($content is null ? string : static)
    */
@@ -404,7 +404,7 @@ class QuipXmlElementIterator extends \IteratorIterator implements QuipXmlElement
   }
 
   /**
-   * {@inheritdoc}
+   * @inheritDoc
    */
   public function unwrap(): QuipXmlElement|QuipXmlElementIterator {
     // Siblings share a parent, which is removed once; every parent is read
@@ -430,37 +430,37 @@ class QuipXmlElementIterator extends \IteratorIterator implements QuipXmlElement
   }
 
   /**
-   * {@inheritdoc}
+   * @inheritDoc
    */
   public function wrap(string|\SimpleXMLElement|\DOMNode $content): static {
     return $this->eachSetter(static fn (QuipXmlElement $node) => $node->wrap($content));
   }
 
   /**
-   * {@inheritdoc}
+   * @inheritDoc
    */
   public function wrapInner(string|\SimpleXMLElement|\DOMNode $content): static {
     return $this->eachSetter(static fn (QuipXmlElement $node) => $node->wrapInner($content));
   }
 
   /**
-   * {@inheritdoc}
+   * @inheritDoc
    */
   public function qxparent(): QuipXmlElement|QuipXmlElementIterator {
     return $this->eachGetIterator(static fn (QuipXmlElement $node) => $node->qxparent());
   }
 
   /**
-   * {@inheritdoc}
+   * @inheritDoc
    */
   public function qxprev(): QuipXmlElement|QuipXmlElementIterator {
     return $this->eachGetIterator(static fn (QuipXmlElement $node) => $node->qxprev());
   }
 
   /**
-   * {@inheritdoc}
-   *
    * An absolute path runs once, from the first node's document.
+   *
+   * @inheritDoc
    */
   public function qxpath(string $path): QuipXmlElement|QuipXmlElementIterator {
     if (str_starts_with($path, '/')) {

@@ -222,7 +222,7 @@ class QuipXmlElement extends \SimpleXMLElement implements QuipXmlElementInterfac
   }
 
   /**
-   * {@inheritdoc}
+   * @inheritDoc
    */
   public function addChild(string $qualifiedName, ?string $value = NULL, ?string $namespace = NULL): ?static {
     $child = parent::addChild($qualifiedName, $value, $namespace);
@@ -230,7 +230,7 @@ class QuipXmlElement extends \SimpleXMLElement implements QuipXmlElementInterfac
   }
 
   /**
-   * {@inheritdoc}
+   * @inheritDoc
    */
   public function after(string|\SimpleXMLElement|\DOMNode $content): static {
     $me = $this->elementNode('after');
@@ -241,7 +241,7 @@ class QuipXmlElement extends \SimpleXMLElement implements QuipXmlElementInterfac
   }
 
   /**
-   * {@inheritdoc}
+   * @inheritDoc
    */
   public function append(string|\SimpleXMLElement|\DOMNode $content): static {
     $me = $this->elementNode('append');
@@ -252,7 +252,7 @@ class QuipXmlElement extends \SimpleXMLElement implements QuipXmlElementInterfac
   }
 
   /**
-   * {@inheritdoc}
+   * @inheritDoc
    */
   public function attributes(?string $namespaceOrPrefix = NULL, bool $isPrefix = FALSE): ?static {
     $attributes = parent::attributes($namespaceOrPrefix, $isPrefix);
@@ -260,7 +260,7 @@ class QuipXmlElement extends \SimpleXMLElement implements QuipXmlElementInterfac
   }
 
   /**
-   * {@inheritdoc}
+   * @inheritDoc
    */
   public function before(string|\SimpleXMLElement|\DOMNode $content): static {
     $me = $this->elementNode('before');
@@ -271,7 +271,7 @@ class QuipXmlElement extends \SimpleXMLElement implements QuipXmlElementInterfac
   }
 
   /**
-   * {@inheritdoc}
+   * @inheritDoc
    */
   public function children(?string $namespaceOrPrefix = NULL, bool $isPrefix = FALSE): ?static {
     $children = parent::children($namespaceOrPrefix, $isPrefix);
@@ -279,7 +279,7 @@ class QuipXmlElement extends \SimpleXMLElement implements QuipXmlElementInterfac
   }
 
   /**
-   * {@inheritdoc}
+   * @inheritDoc
    */
   public function dom(int $index = 0): \DOMNode|false {
     if ($index !== 0) {
@@ -295,16 +295,16 @@ class QuipXmlElement extends \SimpleXMLElement implements QuipXmlElementInterfac
   }
 
   /**
-   * {@inheritdoc}
-   *
    * A single node returns itself whatever the index.
+   *
+   * @inheritDoc
    */
   public function eq(int $index = 0): QuipXmlElement {
     return $this;
   }
 
   /**
-   * {@inheritdoc}
+   * @inheritDoc
    */
   public function get(string $path): QuipXmlElement {
     // Walk the longest prefix of the path that already exists.
@@ -366,7 +366,7 @@ class QuipXmlElement extends \SimpleXMLElement implements QuipXmlElementInterfac
   }
 
   /**
-   * {@inheritdoc}
+   * @inheritDoc
    *
    * @phpstan-return ($content is null|\QuipXml\Xml\QuipXmlFormatter ? string : static)
    */
@@ -414,7 +414,7 @@ class QuipXmlElement extends \SimpleXMLElement implements QuipXmlElementInterfac
   }
 
   /**
-   * {@inheritdoc}
+   * @inheritDoc
    */
   public function htmlOuter(?QuipXmlFormatter $formatter = NULL): string {
     if ($this->dom() === FALSE) {
@@ -432,7 +432,7 @@ class QuipXmlElement extends \SimpleXMLElement implements QuipXmlElementInterfac
   }
 
   /**
-   * {@inheritdoc}
+   * @inheritDoc
    */
   public function remove(): bool {
     $me = $this->dom();
@@ -447,7 +447,7 @@ class QuipXmlElement extends \SimpleXMLElement implements QuipXmlElementInterfac
   }
 
   /**
-   * {@inheritdoc}
+   * @inheritDoc
    */
   public function setTag(string $tag): QuipXmlElement|QuipXmlElementIterator {
     $me = $this->elementNode('setTag');
@@ -489,7 +489,7 @@ class QuipXmlElement extends \SimpleXMLElement implements QuipXmlElementInterfac
   }
 
   /**
-   * {@inheritdoc}
+   * @inheritDoc
    *
    * @phpstan-return ($content is null ? string : static)
    */
@@ -516,7 +516,7 @@ class QuipXmlElement extends \SimpleXMLElement implements QuipXmlElementInterfac
   }
 
   /**
-   * {@inheritdoc}
+   * @inheritDoc
    */
   public function unwrap(): QuipXmlElement|QuipXmlElementIterator {
     $parent = $this->elementNode('unwrap')?->parentNode;
@@ -532,7 +532,7 @@ class QuipXmlElement extends \SimpleXMLElement implements QuipXmlElementInterfac
   }
 
   /**
-   * {@inheritdoc}
+   * @inheritDoc
    */
   public function wrap(string|\SimpleXMLElement|\DOMNode $content): static {
     $me = $this->elementNode('wrap');
@@ -545,7 +545,7 @@ class QuipXmlElement extends \SimpleXMLElement implements QuipXmlElementInterfac
   }
 
   /**
-   * {@inheritdoc}
+   * @inheritDoc
    */
   public function wrapInner(string|\SimpleXMLElement|\DOMNode $content): static {
     $me = $this->elementNode('wrapInner');
@@ -560,12 +560,12 @@ class QuipXmlElement extends \SimpleXMLElement implements QuipXmlElementInterfac
   }
 
   /**
-   * {@inheritdoc}
-   *
    * The prefix also reaches every node Quip returns from this one: query
    * results, empty results, and the results of children(), attributes() and
    * addChild(). Nodes SimpleXML makes itself, by property access or by
    * iterating a SimpleXML list, start without it.
+   *
+   * @inheritDoc
    */
   public function registerXPathNamespace(string $prefix, string $namespace): bool {
     if (!parent::registerXPathNamespace($prefix, $namespace)) {
@@ -579,21 +579,21 @@ class QuipXmlElement extends \SimpleXMLElement implements QuipXmlElementInterfac
   }
 
   /**
-   * {@inheritdoc}
+   * @inheritDoc
    */
   public function qxparent(): QuipXmlElement|QuipXmlElementIterator {
     return $this->qxpath('..');
   }
 
   /**
-   * {@inheritdoc}
+   * @inheritDoc
    */
   public function qxprev(): QuipXmlElement|QuipXmlElementIterator {
     return $this->qxpath('preceding-sibling::*[1]');
   }
 
   /**
-   * {@inheritdoc}
+   * @inheritDoc
    */
   public function qxpath(string $path): QuipXmlElement|QuipXmlElementIterator {
     $results = parent::xpath($path);
