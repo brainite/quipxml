@@ -1,36 +1,70 @@
 <?php
 
+/*
+ * This file is part of the QuipXml package.
+ *
+ * (c) Greg Payne
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
+declare(strict_types=1);
+
 namespace QuipXml\Calendar;
 
 use QuipXml\Quip;
-use QuipXml\Xml\QuipXmlFormatter;
+use QuipXml\Xml\QuipXmlElement;
 
 /**
- * Implements the JSON feed as detailed for fullcalendar.
+ * Writes a calendar's events as a FullCalendar JSON event feed.
+ *
+ * Each VEVENT child of the node passed becomes an object with `title`,
+ * `start`, `end` and `uid`, a `location` object (its text as `data`, plus its
+ * parameters, `X-` prefix dropped) when it has one, and each X- property
+ * under its lower-case name. Times are written in the calendar's
+ * X-WR-TIMEZONE with their UTC offset.
+ *
  * @link http://fullcalendar.io/docs/event_data/events_array/
  */
 class QuipCalendarJsonFeedFormatter extends QuipCalendarIcsFormatter {
 
-  public function __construct($settings = NULL) {
+  /**
+   * Creates a formatter.
+   *
+   * @param array<string, bool>|null $settings
+   *   Settings that override the defaults, including `fix_uid_length`.
+   */
+  public function __construct(?array $settings = NULL) {
     $this->settings = array_merge($this->settings, [
       'fix_uid_length' => TRUE,
     ], (array) $settings);
   }
 
   /**
+   * Converts a date-time to the calendar's timezone.
    *
+   * @param string $value
+   *   The date-time; one ending in `Z` is UTC, and any other is read in PHP's
+   *   default timezone.
+   * @param \QuipXml\Xml\QuipXmlElement $xml
+   *   Any node of the calendar document, to read X-WR-TIMEZONE from.
+   *
+   * @return string
+   *   The date-time in the calendar's timezone with its offset
+   *   (`Ymd\THisO`), or as given when the calendar has no X-WR-TIMEZONE.
    */
-  protected function getDateTime($value, &$xml) {
+  protected function getDateTime(string $value, QuipXmlElement &$xml): string {
     // Get the timezone.
-    $tz = NULL;
-    $tz_name = trim($xml->qxpath('//x-wr-timezone')->html());
+    $tz = $utc = NULL;
+    $tz_name = trim((string) $xml->qxpath('//x-wr-timezone')->html());
     if ($tz_name !== '') {
       $tz = new \DateTimeZone($tz_name);
-      $utc = new \DateTimeZone("UTC");
+      $utc = new \DateTimeZone('UTC');
     }
 
     // Apply the timezone shift to use UTC.
-    if (isset($tz)) {
+    if (isset($tz, $utc)) {
       if (substr($value, -1) !== 'Z') {
         $dt = new \DateTime($value);
         $dt->setTimezone($tz);
@@ -46,45 +80,58 @@ class QuipCalendarJsonFeedFormatter extends QuipCalendarIcsFormatter {
   }
 
   /**
+   * Formats the events of a calendar as a JSON array.
    *
+   * @param \SimpleXMLElement $xml
+   *   The `<vcalendar>` element; a plain SimpleXMLElement is wrapped as a
+   *   Quip node of the same document.
+   *
+   * @return string
+   *   The pretty-printed JSON array of events.
    */
-  public function getFormattedOuter($xml) {
-    $this->fixUid($xml);
+  public function getFormattedOuter(\SimpleXMLElement $xml): string {
+    $quip = $xml instanceof QuipXmlElement ? $xml : Quip::load($xml);
+    $this->fixUid($quip);
     $data = [];
-    foreach ($xml->vevent as $vevent) {
+    foreach ($quip->vevent as $vevent) {
       $data[] = $this->getFormattedEventIterator($vevent);
     }
-    $output = json_encode($data, JSON_PRETTY_PRINT);
-    return $output;
+    return (string) json_encode($data, JSON_PRETTY_PRINT);
   }
 
   /**
+   * Builds the feed object for one event.
    *
+   * @param \QuipXml\Xml\QuipXmlElement $vevent
+   *   The `<vevent>` element.
+   *
+   * @return array<string, string|array<string, string>>
+   *   The event's feed properties.
    */
-  private function getFormattedEventIterator($vevent) {
+  private function getFormattedEventIterator(QuipXmlElement $vevent): array {
     $event = [];
-    $event['title'] = $vevent->summary->html();
-    $event['start'] = $this->getDateTime($vevent->dtstart->html(), $vevent);
-    $event['end'] = $this->getDateTime($vevent->dtend->html(), $vevent);
-    $event['uid'] = $vevent->uid->html();
+    $event['title'] = (string) $vevent->summary->html();
+    $event['start'] = $this->getDateTime((string) $vevent->dtstart->html(), $vevent);
+    $event['end'] = $this->getDateTime((string) $vevent->dtend->html(), $vevent);
+    $event['uid'] = (string) $vevent->uid->html();
     if ($vevent->location) {
-      $event['location'] = [];
-      $event['location']['data'] = trim($vevent->location->html());
-      foreach ($vevent->location->attributes() as $k => $v) {
+      $location = [];
+      $location['data'] = trim((string) $vevent->location->html());
+      foreach ($vevent->location->attributes() ?? [] as $k => $v) {
         $k = strtolower($k);
         if (substr($k, 0, 2) === 'x-') {
           $k = substr($k, 2);
         }
-        $event['location'][$k] = trim($v);
+        $location[$k] = trim((string) $v);
       }
-      if ($event['location']['data'] === '') {
-        unset($event['location']);
+      if ($location['data'] !== '') {
+        $event['location'] = $location;
       }
     }
 
-    foreach ($vevent->children() as $k => $v) {
+    foreach ($vevent->children() ?? [] as $k => $v) {
       if (stripos($k, 'X-') !== FALSE) {
-        $event[$k] = $v->html();
+        $event[$k] = (string) $v->html();
       }
     }
     return $event;
