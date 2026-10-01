@@ -1,9 +1,17 @@
 <?php
+
 namespace QuipXml\Encoding;
 
+/**
+ *
+ */
 class Html5Entities {
-  static public function getNamedEntities() {
-    return array(
+
+  /**
+   *
+   */
+  public static function getNamedEntities() {
+    return [
       'Tab' => 9,
       'NewLine' => 10,
       'excl' => 33,
@@ -2035,8 +2043,7 @@ class Html5Entities {
       'xopf' => 120169,
       'yopf' => 120170,
       'zopf' => 120171,
-    );
+    ];
   }
 
 }
-

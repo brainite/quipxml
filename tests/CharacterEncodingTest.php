@@ -1,4 +1,5 @@
 <?php
+
 /*
  * This file is part of the QuipXml package.
  *
@@ -10,8 +11,17 @@
 
 namespace QuipXml\Tests;
 
+use PHPUnit\Framework\TestCase;
 use QuipXml\Encoding\CharacterEncoding;
-class CharacterEncodingTest extends \PHPUnit\Framework\TestCase {
+
+/**
+ *
+ */
+class CharacterEncodingTest extends TestCase {
+
+  /**
+   *
+   */
   public function testAsciiTransliteration() {
     $test = "—’–";
     $expected = "-'-";

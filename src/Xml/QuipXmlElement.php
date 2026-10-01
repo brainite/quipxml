@@ -1,4 +1,5 @@
 <?php
+
 /*
  * This file is part of the QuipXml package.
  *
@@ -10,9 +11,18 @@
 
 namespace QuipXml\Xml;
 
+use Exception\NotPermanentMemberException;
 use QuipXml\Quip;
 use QuipXml\Encoding\CharacterEncoding;
+
+/**
+ *
+ */
 class QuipXmlElement extends \SimpleXMLElement {
+
+  /**
+   *
+   */
   protected function _contentToDom($content, $return_parent = FALSE) {
     if ($content instanceof \SimpleXMLElement) {
       $new = dom_import_simplexml($content);
@@ -44,12 +54,15 @@ class QuipXmlElement extends \SimpleXMLElement {
       }
     }
     else {
-      throw new Exception\NotPermanentMemberException;
+      throw new NotPermanentMemberException();
     }
 
     return $new;
   }
 
+  /**
+   *
+   */
   protected function _getEmptyElement() {
     $results = parent::xpath('/*');
     return $results[0]->{uniqid('empty element')};
@@ -57,7 +70,9 @@ class QuipXmlElement extends \SimpleXMLElement {
 
   /**
    * Add the content before this node.
+   *
    * @param mixed $content
+   *
    * @return \QuipXml\Xml\QuipXmlElement
    */
   public function before($content) {
@@ -73,7 +88,9 @@ class QuipXmlElement extends \SimpleXMLElement {
 
   /**
    * Add the content after this node.
+   *
    * @param mixed $content
+   *
    * @return \QuipXml\Xml\QuipXmlElement
    */
   public function after($content) {
@@ -94,7 +111,9 @@ class QuipXmlElement extends \SimpleXMLElement {
 
   /**
    * Add the content at the end of this node.
+   *
    * @param mixed $content
+   *
    * @return \QuipXml\Xml\QuipXmlElement
    */
   public function append($content) {
@@ -109,7 +128,9 @@ class QuipXmlElement extends \SimpleXMLElement {
 
   /**
    * Add the content before this node.
+   *
    * @param int $index
+   *
    * @return \QuipXml\Xml\QuipXmlElement
    */
   public function eq($index = 0) {
@@ -118,8 +139,10 @@ class QuipXmlElement extends \SimpleXMLElement {
 
   /**
    * Get the DOM object associated with this node.
+   *
    * @param int $index
-   * @return DOMElement|FALSE
+   *
+   * @return DOMElement|false
    */
   public function dom($index = 0) {
     if ($index == 0) {
@@ -129,6 +152,9 @@ class QuipXmlElement extends \SimpleXMLElement {
     return FALSE;
   }
 
+  /**
+   *
+   */
   public function get($xpath) {
     // Break the parts and look for the cursor that exists.
     $parts = explode('/', $xpath);
@@ -199,17 +225,17 @@ class QuipXmlElement extends \SimpleXMLElement {
     if (!isset($content)) {
       $str = trim(parent::asXML());
       do {
-        list($open, $str) = explode('>', $str, 2);
+        [$open, $str] = explode('>', $str, 2);
       } while (substr($open, -1) === '?');
       $tmp = explode('<', $str);
       array_pop($tmp);
       $str = join('<', $tmp);
       $str = trim($str);
-      $str = strtr($str, array(
+      $str = strtr($str, [
         "\r" => '',
         '&#13;' => "",
         '&#xA0;' => '&nbsp;',
-      ));
+      ]);
       return $str;
     }
     elseif ($content instanceof QuipXmlFormatter) {
@@ -226,21 +252,24 @@ class QuipXmlElement extends \SimpleXMLElement {
         }
       }
       else {
-        throw new Exception\NotPermanentMemberException;
+        throw new NotPermanentMemberException();
       }
     }
     return $this;
   }
 
+  /**
+   *
+   */
   public function htmlOuter($content = NULL) {
     if (!isset($content)) {
       $str = parent::asXML();
       $str = preg_replace('@^<\?xml.*?\?>\s*@s', '', $str);
-      $str = strtr($str, array(
+      $str = strtr($str, [
         "\r" => '',
         '&#13;' => "",
         '&#xA0;' => '&nbsp;',
-      ));
+      ]);
       return trim($str);
     }
     elseif ($content instanceof QuipXmlFormatter) {
@@ -249,6 +278,9 @@ class QuipXmlElement extends \SimpleXMLElement {
     return $this;
   }
 
+  /**
+   *
+   */
   public function remove() {
     $me = $this->dom();
     if ($me === FALSE || !isset($me->parentNode)) {
@@ -257,6 +289,9 @@ class QuipXmlElement extends \SimpleXMLElement {
     return (bool) $me->parentNode->removeChild($me);
   }
 
+  /**
+   *
+   */
   public function setTag($tag) {
     if (preg_match('@^[a-z0-9]+$@si', $tag)) {
       $tagName = $tag;
@@ -270,25 +305,31 @@ class QuipXmlElement extends \SimpleXMLElement {
     return $this->wrapInner($tag)->qxpath($tagName)->unwrap();
   }
 
+  /**
+   *
+   */
   public function text($content = NULL) {
     if (!isset($content)) {
       return strip_tags($this->html());
     }
     elseif ($me = $this->dom()) {
       if (is_string($content) || is_numeric($content)) {
-        $content = CharacterEncoding::toHtml((string) $content, array(
+        $content = CharacterEncoding::toHtml((string) $content, [
           'escape_ampersand_selective' => TRUE,
           'entities_prefer_numeric' => TRUE,
-        ));
+        ]);
         $me->nodeValue = $content;
       }
     }
     else {
-      throw new Exception\NotPermanentMemberException;
+      throw new NotPermanentMemberException();
     }
     return $this;
   }
 
+  /**
+   *
+   */
   public function unwrap() {
     $parent = $this->qxparent()->dom();
     if (!$parent) {
@@ -301,6 +342,9 @@ class QuipXmlElement extends \SimpleXMLElement {
     return $this;
   }
 
+  /**
+   *
+   */
   public function wrap($content) {
     if ($me = $this->dom()) {
       $parent = $me->parentNode;
@@ -311,6 +355,9 @@ class QuipXmlElement extends \SimpleXMLElement {
     return $this;
   }
 
+  /**
+   *
+   */
   public function wrapInner($content) {
     if ($me = $this->dom()) {
       $new = $this->_contentToDom($content);
@@ -325,6 +372,7 @@ class QuipXmlElement extends \SimpleXMLElement {
 
   /**
    * Get the parent node or an empty iterator.
+   *
    * @return \QuipXml\Xml\QuipXmlElementIterator
    */
   public function qxparent() {
@@ -332,7 +380,8 @@ class QuipXmlElement extends \SimpleXMLElement {
   }
 
   /**
-   * Get the preceding sibling for this node
+   * Get the preceding sibling for this node.
+   *
    * @return \QuipXml\Xml\QuipXmlElementIterator
    */
   public function qxprev() {
@@ -341,7 +390,9 @@ class QuipXmlElement extends \SimpleXMLElement {
 
   /**
    * Run an XPath query and wrap the results in a Quip iterator.
+   *
    * @see SimpleXMLElement::xpath()
+   *
    * @return \QuipXml\Xml\QuipXmlElementIterator
    */
   public function qxpath($path) {
@@ -354,7 +405,9 @@ class QuipXmlElement extends \SimpleXMLElement {
 
   /**
    * Get the parent node or an empty iterator.
+   *
    * @deprecated in quipxml:0.4.0 and is removed from quipxml:1.0.0. Use qxparent() instead.
+   *
    * @return \QuipXml\Xml\QuipXmlElementIterator
    */
   public function xparent() {
@@ -362,8 +415,10 @@ class QuipXmlElement extends \SimpleXMLElement {
   }
 
   /**
-   * Get the preceding sibling for this node
+   * Get the preceding sibling for this node.
+   *
    * @deprecated in quipxml:0.4.0 and is removed from quipxml:1.0.0. Use qxprev() instead.
+   *
    * @return \QuipXml\Xml\QuipXmlElementIterator
    */
   public function xprev() {
@@ -372,8 +427,10 @@ class QuipXmlElement extends \SimpleXMLElement {
 
   /**
    * Wrap the xpath results in a Quip iterator.
+   *
    * @deprecated in quipxml:0.4.0 and is removed from quipxml:1.0.0. Use qxpath() instead.
    * @see SimpleXMLElement::xpath()
+   *
    * @return \QuipXml\Xml\QuipXmlElementIterator
    */
   #[\ReturnTypeWillChange]

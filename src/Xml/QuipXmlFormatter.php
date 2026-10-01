@@ -1,4 +1,5 @@
 <?php
+
 /*
  * This file is part of the QuipXml package.
  *
@@ -9,17 +10,24 @@
  */
 
 namespace QuipXml\Xml;
+
+/**
+ *
+ */
 class QuipXmlFormatter {
-  protected $settings = array(
+  protected $settings = [
     'preserveWhitespace' => FALSE,
     'formatOutput' => TRUE,
     'openingTag' => FALSE,
-  );
+  ];
 
   public function __construct($settings = NULL) {
     $this->settings = array_merge($this->settings, (array) $settings);
   }
 
+  /**
+   *
+   */
   public function getFormattedInner($xml) {
     $this->settings['openingTag'] = FALSE;
     $str = '';
@@ -29,6 +37,9 @@ class QuipXmlFormatter {
     return $str;
   }
 
+  /**
+   *
+   */
   public function getFormattedOuter($xml) {
     if ($this->settings['formatOutput']) {
       $dom = new \DOMDocument();
@@ -45,12 +56,12 @@ class QuipXmlFormatter {
       $str = preg_replace('@^<\?xml.*?\?>\s*@s', '', $str);
     }
 
-    $str = strtr($str, array(
+    $str = strtr($str, [
       '&#xD;' => '',
       '&#13;' => "",
       "\r\n" => "\n",
       '&#xA0;' => '&nbsp;',
-    ));
+    ]);
     $str = trim($str);
     return $str;
   }

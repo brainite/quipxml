@@ -1,4 +1,5 @@
 <?php
+
 /*
  * This file is part of the QuipXml package.
  *
@@ -9,8 +10,16 @@
  */
 
 namespace QuipXml\OneLiner;
+
+/**
+ *
+ */
 class OneLiner {
-  static public function attributes(array $attrs = array()) {
+
+  /**
+   *
+   */
+  public static function attributes(array $attrs = []) {
     $ret = '';
     foreach ($attrs as $k => &$v) {
       $v = implode(' ', (array) $v);
@@ -19,7 +28,10 @@ class OneLiner {
     return $ret;
   }
 
-  static public function minifyHtml($html, $mode = 'html') {
+  /**
+   *
+   */
+  public static function minifyHtml($html, $mode = 'html') {
     if (!isset($html)) {
       if ($mode === 'ob') {
         $html = ob_get_contents();
@@ -37,7 +49,10 @@ class OneLiner {
     return $output;
   }
 
-  static public function isHtmlEmpty($html) {
+  /**
+   *
+   */
+  public static function isHtmlEmpty($html) {
     if (!is_string($html) || $html == '') {
       return TRUE;
     }
@@ -50,9 +65,9 @@ class OneLiner {
         return FALSE;
       }
     }
-    $html = trim(strtr(strip_tags($html), array(
+    $html = trim(strtr(strip_tags($html), [
       '&nbsp;' => '',
-    )));
+    ]));
     if ($html == '') {
       return TRUE;
     }
@@ -63,17 +78,19 @@ class OneLiner {
    * Translate css classes.
    *
    * @param string $html
-   * @param array $css_tr array('*' => array(' old ' => ' new ',),)
+   * @param array $css_tr
+   *   array('*' => array(' old ' => ' new ',),)
+   *
    * @return string
    */
-  static public function htmlClassTr($html, $css_tr) {
+  public static function htmlClassTr($html, $css_tr) {
     $html = preg_replace_callback('@<(?<tag>[a-z]+)(?<other>\s+[^>]*)class="(?<class>[^"]+)"@s', function ($attrs) use ($css_tr) {
       $class = ' '
-        . strtr($attrs['class'], array(
+        . strtr($attrs['class'], [
           "\n" => ' ',
           "\r" => ' ',
           "\t" => ' ',
-        )) . ' ';
+        ]) . ' ';
       $class = strtr($class, $css_tr['*']);
       if (isset($css_tr[$attrs['tag']])) {
         $class = strtr($class, $css_tr[$attrs['tag']]);
@@ -87,7 +104,10 @@ class OneLiner {
     return $html;
   }
 
-  static public function wrap($wrapper, $content, $wrapIfEmpty = TRUE, $attrs = NULL) {
+  /**
+   *
+   */
+  public static function wrap($wrapper, $content, $wrapIfEmpty = TRUE, $attrs = NULL) {
     // Catch uninteresting cases quickly.
     if (!isset($wrapper) || !is_string($wrapper) || $wrapper === '') {
       return $content;
@@ -120,7 +140,7 @@ class OneLiner {
     }
     // Tag name with CSS-style attributes.
     elseif (preg_match('@^(?<tag>[a-z0-9]+)[#\.][a-z0-9#\.\-]+$@si', $wrapper, $arr)) {
-      $attrs = isset($attrs) ? (array) $attrs : array();
+      $attrs = isset($attrs) ? (array) $attrs : [];
       $tmp = substr($wrapper, strlen($arr['tag']));
       $wrapper = $arr['tag'];
       while (preg_match('@^(?<type>[#\.])(?<value>[^#\.]+)(?:[#\.]|$)@s', $tmp, $arr)) {
@@ -129,6 +149,7 @@ class OneLiner {
           case '#':
             $attrs['id'] = $arr['value'];
             break;
+
           case '.':
             if (!isset($attrs['class']) || strlen($attrs['class']) == 0) {
               $attrs['class'] = $arr['value'];
@@ -152,7 +173,7 @@ class OneLiner {
       $output = $wrapper . $content;
       $parts = explode('<', $wrapper);
       array_shift($parts);
-      $closed = array();
+      $closed = [];
       foreach (array_reverse($parts) as $part) {
         if ($part[0] === '/') {
           if (preg_match('@^/([^>]*)>@s', $part, $arr)) {

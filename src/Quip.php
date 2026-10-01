@@ -1,4 +1,5 @@
 <?php
+
 /*
  * This file is part of the QuipXml package.
  *
@@ -13,27 +14,34 @@ namespace QuipXml;
 use QuipXml\Encoding\CharacterEncoding;
 use QuipXml\Xml\QuipXmlElement;
 use QuipXml\Xml\QuipXmlFormatter;
+
+/**
+ *
+ */
 class Quip {
   const LOAD_NS_UNWRAP = 1;
   const LOAD_NS_STRIP = 2;
   const LOAD_IGNORE_ERRORS = 4;
 
-  static public function formatter($settings = NULL) {
+  /**
+   *
+   */
+  public static function formatter($settings = NULL) {
     return new QuipXmlFormatter($settings);
   }
 
   /**
    * @param mixed $source
-   * @param number $options
+   * @param int $options
    * @param bool $data_is_url
    * @param string $ns
    * @param bool $is_prefix
-   * @param number $quip_options
+   * @param int $quip_options
    * @throws \ErrorException
    * @throws \Exception
    * @return \QuipXml\Xml\QuipXmlElement
    */
-  static public function load($source, $options = 0, $data_is_url = FALSE, $ns = '', $is_prefix = FALSE, $quip_options = 0) {
+  public static function load($source, $options = 0, $data_is_url = FALSE, $ns = '', $is_prefix = FALSE, $quip_options = 0) {
     set_error_handler(function ($errno, $errstr, $errfile, $errline) {
       throw new \ErrorException($errstr, $errno);
     }, E_WARNING);
@@ -81,18 +89,18 @@ class Quip {
       }
 
       if (!$data_is_url) {
-        $source = strtr($source, array(
+        $source = strtr($source, [
           '&nbsp;' => '&#xA0;',
-        ));
+        ]);
       }
       $quip = new QuipXmlElement($source, $options, $data_is_url, $ns, $is_prefix);
     }
     catch (\Exception $e) {
       try {
         $data = $data_is_url ? file_get_contents($source) : $source;
-        $data = strtr($data, array(
+        $data = strtr($data, [
           '&nbsp;' => '&#xA0;',
-        ));
+        ]);
         $dom = new \DOMDocument();
         if (version_compare(PHP_VERSION, '5.4.0') >= 0) {
           try {
@@ -119,7 +127,7 @@ class Quip {
               return static::load("<div>$data</div>", $options, FALSE, $ns, $is_prefix, $quip_options);
             }
 
-            // hhvm returns the root by default rather than the original imported item.
+            // Hhvm returns the root by default rather than the original imported item.
             $cursor = $children->item(0);
           }
         }

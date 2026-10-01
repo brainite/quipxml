@@ -1,4 +1,5 @@
 <?php
+
 /*
  * This file is part of the QuipXml package.
  *
@@ -10,14 +11,24 @@
 
 namespace QuipXml\Tests;
 
+use QuipXml\Xml\QuipXmlFormatter;
+use PHPUnit\Framework\TestCase;
 use QuipXml\Quip;
-class BasicTest extends \PHPUnit\Framework\TestCase {
+
+/**
+ *
+ */
+class BasicTest extends TestCase {
   protected $formatter = NULL;
+
   public function __construct() {
     parent::__construct();
     $this->formatter = Quip::formatter();
   }
 
+  /**
+   *
+   */
   public function testCount() {
     $quip = Quip::load(__DIR__ . '/Resources/XmlBasicList.xml', 0, TRUE);
 
@@ -26,10 +37,13 @@ class BasicTest extends \PHPUnit\Framework\TestCase {
     $this->assertEquals(sizeof($quip->qxpath('//original/x[1]')), 0);
   }
 
+  /**
+   *
+   */
   public function testXmlBasicList() {
     $formatter = $this->formatter;
 
-    // Test after, xparent, html and htmlOuter
+    // Test after, xparent, html and htmlOuter.
     $quip = Quip::load(__DIR__ . '/Resources/XmlBasicList.xml', 0, TRUE);
     $add = $quip->qxpath("//arg[@id = 'new-content']")->html();
     $tgt = $quip->qxpath("//original//item[@class = 'target']");
@@ -44,7 +58,7 @@ class BasicTest extends \PHPUnit\Framework\TestCase {
     $expected = $quip->qxpath("//output[@method = 'after']")->html($formatter);
     $this->assertEquals($expected, $actual);
 
-    // Test before, xparent, html and htmlOuter
+    // Test before, xparent, html and htmlOuter.
     $quip = Quip::load(__DIR__ . '/Resources/XmlBasicList.xml', 0, TRUE);
     $add = $quip->qxpath("//arg[@id = 'new-content']")->html();
     $tgt = $quip->qxpath("//original//item[@class = 'target']");
@@ -52,7 +66,7 @@ class BasicTest extends \PHPUnit\Framework\TestCase {
     $expected = $quip->qxpath("//output[@method = 'before']")->html($formatter);
     $this->assertEquals($expected, $actual);
 
-    // Test SimpleXml traversal, before, xparent, html and htmlOuter
+    // Test SimpleXml traversal, before, xparent, html and htmlOuter.
     $quip = Quip::load(__DIR__ . '/Resources/XmlBasicList.xml', 0, TRUE);
     $add = $quip->qxpath("//arg[@id = 'new-content']")->html();
     $tgt = $quip->original->list->qxpath("./item[@class = 'target']");
@@ -79,6 +93,9 @@ class BasicTest extends \PHPUnit\Framework\TestCase {
     $orig->x->text('1');
   }
 
+  /**
+   *
+   */
   public function testSetNewChild() {
     $quip = Quip::load(__DIR__ . '/Resources/XmlBasicList.xml', 0, TRUE);
     $orig = $quip->qxpath('//original')->eq();
@@ -110,15 +127,18 @@ class BasicTest extends \PHPUnit\Framework\TestCase {
     $this->assertEquals($expected, $actual);
   }
 
+  /**
+   *
+   */
   public function testMixTraversal() {
     $quip = Quip::load(__DIR__ . '/Resources/XmlBasicList.xml', 0, TRUE);
-    $expected = array(
+    $expected = [
       'one',
       'two',
       'three',
       'four',
       'five',
-    );
+    ];
     $test1 = $expected;
     foreach ($quip->qxpath('//original/list')->item as $item) {
       $this->assertEquals(array_shift($test1), trim($item));
@@ -144,16 +164,22 @@ class BasicTest extends \PHPUnit\Framework\TestCase {
     $this->assertEmpty($test4);
   }
 
+  /**
+   *
+   */
   public function testNbsp() {
     $test = '<div>Hello&nbsp;World!</div>';
     $expected = '<div>Hello&nbsp;World!</div>';
-    $quip = \QuipXml\Quip::load($test);
+    $quip = Quip::load($test);
     $actual = $quip->htmlOuter();
     $this->assertEquals($expected, $actual);
-    $actual = $quip->htmlOuter(new \QuipXml\Xml\QuipXmlFormatter());
+    $actual = $quip->htmlOuter(new QuipXmlFormatter());
     $this->assertEquals($expected, $actual);
   }
 
+  /**
+   *
+   */
   public function testSurviveEmpty() {
     $quip = Quip::load(__DIR__ . '/Resources/XmlBasicList.xml', 0, TRUE);
 
@@ -193,6 +219,9 @@ class BasicTest extends \PHPUnit\Framework\TestCase {
     $this->assertEquals($expected, $actual);
   }
 
+  /**
+   *
+   */
   public function testTypeCast() {
     // SimpleXml conversion uses references.
     // Loading from SimpleXml preserves the original object.
@@ -204,6 +233,9 @@ class BasicTest extends \PHPUnit\Framework\TestCase {
     $this->assertEquals($expected, $actual);
   }
 
+  /**
+   *
+   */
   public function testWrapUnwrap() {
     $quip = Quip::load(__DIR__ . '/Resources/XmlBasicList.xml', 0, TRUE);
     $expected = $quip->qxpath("//output[@method = 'list-newlist']")->html($this->formatter);

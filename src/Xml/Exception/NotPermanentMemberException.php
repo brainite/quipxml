@@ -1,4 +1,5 @@
 <?php
+
 /*
  * This file is part of the QuipXml package.
  *
@@ -10,8 +11,12 @@
 
 namespace QuipXml\Xml\Exception;
 
+/**
+ *
+ */
 class NotPermanentMemberException extends \ErrorException {
-  public function __construct($message = null, $code = 0, \Exception $previous = null) {
+
+  public function __construct($message = NULL, $code = 0, ?\Exception $previous = NULL) {
     if (!isset($message)) {
       $message = 'Parent is not a permanent member of the XML tree. See QuipXmlElement::get()';
     }

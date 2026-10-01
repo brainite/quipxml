@@ -1,19 +1,25 @@
 <?php
+
 namespace QuipXml\Calendar;
+
 use QuipXml\Quip;
 use QuipXml\Xml\QuipXmlFormatter;
 
 /**
- * Implements the JSON feed as detailed for fullcalendar
+ * Implements the JSON feed as detailed for fullcalendar.
  * @link http://fullcalendar.io/docs/event_data/events_array/
  */
 class QuipCalendarJsonFeedFormatter extends QuipCalendarIcsFormatter {
+
   public function __construct($settings = NULL) {
-    $this->settings = array_merge($this->settings, array(
+    $this->settings = array_merge($this->settings, [
       'fix_uid_length' => TRUE,
-    ), (array) $settings);
+    ], (array) $settings);
   }
 
+  /**
+   *
+   */
   protected function getDateTime($value, &$xml) {
     // Get the timezone.
     $tz = NULL;
@@ -39,9 +45,12 @@ class QuipCalendarJsonFeedFormatter extends QuipCalendarIcsFormatter {
     return $value;
   }
 
+  /**
+   *
+   */
   public function getFormattedOuter($xml) {
     $this->fixUid($xml);
-    $data = array();
+    $data = [];
     foreach ($xml->vevent as $vevent) {
       $data[] = $this->getFormattedEventIterator($vevent);
     }
@@ -49,14 +58,17 @@ class QuipCalendarJsonFeedFormatter extends QuipCalendarIcsFormatter {
     return $output;
   }
 
+  /**
+   *
+   */
   private function getFormattedEventIterator($vevent) {
-    $event = array();
+    $event = [];
     $event['title'] = $vevent->summary->html();
     $event['start'] = $this->getDateTime($vevent->dtstart->html(), $vevent);
     $event['end'] = $this->getDateTime($vevent->dtend->html(), $vevent);
     $event['uid'] = $vevent->uid->html();
     if ($vevent->location) {
-      $event['location'] = array();
+      $event['location'] = [];
       $event['location']['data'] = trim($vevent->location->html());
       foreach ($vevent->location->attributes() as $k => $v) {
         $k = strtolower($k);

@@ -1,4 +1,5 @@
 <?php
+
 /*
  * This file is part of the QuipXml package.
  *
@@ -9,10 +10,15 @@
  */
 
 namespace QuipXml\Xml;
+
+/**
+ *
+ */
 class QuipXmlElementIterator extends \IteratorIterator implements \Countable {
+
   public function __construct($iterator) {
-    $arr = array();
-    $prevs = array();
+    $arr = [];
+    $prevs = [];
     foreach ($iterator as $v) {
       $dom = $v->dom();
       if (!$dom) {
@@ -31,8 +37,11 @@ class QuipXmlElementIterator extends \IteratorIterator implements \Countable {
     $this->rewind();
   }
 
+  /**
+   *
+   */
   public function __get($name) {
-    $arr = array();
+    $arr = [];
     foreach ($this as $el) {
       $arr[] = $el->$name;
     }
@@ -42,15 +51,21 @@ class QuipXmlElementIterator extends \IteratorIterator implements \Countable {
     return new QuipXmlElementIterator(new \ArrayIterator($arr));
   }
 
+  /**
+   *
+   */
   public function __set($name, $value) {
     foreach ($this as $el) {
       $el->$name = $value;
     }
   }
 
+  /**
+   *
+   */
   protected function _eachGetIterator($method, $arg1 = NULL, $arg2 = NULL, $arg3 = NULL) {
     $it = new \AppendIterator();
-    $arr = array();
+    $arr = [];
     foreach ($this as $el) {
       $tmp = $el->$method($arg1, $arg2, $arg3);
       if ($tmp instanceof \Iterator) {
@@ -69,6 +84,9 @@ class QuipXmlElementIterator extends \IteratorIterator implements \Countable {
     return $this->{'no results'};
   }
 
+  /**
+   *
+   */
   protected function _eachSetter($method, $arg1 = NULL, $arg2 = NULL, $arg3 = NULL) {
     foreach ($this as $el) {
       $el->$method($arg1, $arg2, $arg3);
@@ -76,6 +94,9 @@ class QuipXmlElementIterator extends \IteratorIterator implements \Countable {
     return $this;
   }
 
+  /**
+   *
+   */
   protected function _getEmptyElement() {
     foreach ($this as $el) {
       $results = $el->qxpath('/*');
@@ -83,6 +104,9 @@ class QuipXmlElementIterator extends \IteratorIterator implements \Countable {
     }
   }
 
+  /**
+   *
+   */
   protected function _singleGetter($method, $arg1 = NULL) {
     $this->rewind();
     if ($this->valid()) {
@@ -91,26 +115,36 @@ class QuipXmlElementIterator extends \IteratorIterator implements \Countable {
   }
 
   /**
-   * Adds a child element to the XML node
+   * Adds a child element to the XML node.
    * @link http://www.php.net/manual/en/simplexmlelement.addchild.php
    * @param name string                The name of the child element to add.
    * @param value string[optional]     If specified, the value of the child element.
    * @param namespace string[optional] If specified, the namespace to which the child element belongs.
+   *
    * @return QuipXmlElementIterator    The addChild method returns a QuipXmlElementIterator
-   *                                   object representing the child(ren) added to the XML node(s).
+   *   object representing the child(ren) added to the XML node(s).
    */
   public function addChild($name, $value = NULL, $namespace = NULL) {
     return $this->_eachGetIterator('addChild', $name, $value, $namespace);
   }
 
+  /**
+   *
+   */
   public function after($content) {
     return $this->_eachSetter('after', $content);
   }
 
+  /**
+   *
+   */
   public function before($content) {
     return $this->_eachSetter('before', $content);
   }
 
+  /**
+   *
+   */
   public function count(): int {
     $count = 0;
     foreach ($this as $tmp) {
@@ -123,6 +157,9 @@ class QuipXmlElementIterator extends \IteratorIterator implements \Countable {
     return $count;
   }
 
+  /**
+   *
+   */
   public function eq($index = 0) {
     $this->rewind();
     for ($i = 0; $i < $index; ++$i) {
@@ -137,6 +174,9 @@ class QuipXmlElementIterator extends \IteratorIterator implements \Countable {
     return $this->_getEmptyElement();
   }
 
+  /**
+   *
+   */
   public function dom($index = 0) {
     $eq = $this->eq($index);
     if ($eq instanceof self) {
@@ -145,10 +185,16 @@ class QuipXmlElementIterator extends \IteratorIterator implements \Countable {
     return $eq->dom();
   }
 
+  /**
+   *
+   */
   public function get($path) {
     return $this->_eachGetIterator('get', $path);
   }
 
+  /**
+   *
+   */
   public function html($content = NULL) {
     if (isset($content)) {
       if ($content instanceof QuipXmlFormatter) {
@@ -159,6 +205,9 @@ class QuipXmlElementIterator extends \IteratorIterator implements \Countable {
     return $this->_singleGetter('html');
   }
 
+  /**
+   *
+   */
   public function htmlOuter($content = NULL) {
     if (isset($content)) {
       if ($content instanceof QuipXmlFormatter) {
@@ -169,14 +218,23 @@ class QuipXmlElementIterator extends \IteratorIterator implements \Countable {
     return $this->_singleGetter('htmlOuter');
   }
 
+  /**
+   *
+   */
   public function remove() {
     return $this->_eachSetter('remove');
   }
 
+  /**
+   *
+   */
   public function setTag($tag) {
     return $this->_eachSetter('setTag', $tag);
   }
 
+  /**
+   *
+   */
   public function text($content = NULL) {
     if (isset($content)) {
       if ($content instanceof QuipXmlFormatter) {
@@ -187,30 +245,46 @@ class QuipXmlElementIterator extends \IteratorIterator implements \Countable {
     return $this->_singleGetter('text');
   }
 
+  /**
+   *
+   */
   public function unwrap() {
     return $this->_eachSetter('unwrap');
   }
 
+  /**
+   *
+   */
   public function wrap($content) {
     return $this->_eachSetter('wrap', $content);
   }
 
+  /**
+   *
+   */
   public function wrapInner($content) {
     return $this->_eachSetter('wrapInner', $content);
   }
 
+  /**
+   *
+   */
   public function qxparent() {
     return $this->_eachGetIterator('qxparent');
   }
 
+  /**
+   *
+   */
   public function qxprev() {
     return $this->_eachGetIterator('qxprev');
   }
 
   /**
-   * Runs XPath query on XML data
+   * Runs XPath query on XML data.
    * @link http://www.php.net/manual/en/simplexmlelement.xpath.php
    * @param path string An XPath path
+   *
    * @return QuipXmlElementIterator
    */
   public function qxpath($path) {
@@ -240,9 +314,11 @@ class QuipXmlElementIterator extends \IteratorIterator implements \Countable {
   }
 
   /**
-   * Runs XPath query on XML data
+   * Runs XPath query on XML data.
+   *
    * @deprecated in quipxml:0.4.0 and is removed from quipxml:1.0.0. Use qxpath() instead.
    * @param path string An XPath path
+   *
    * @return QuipXmlElementIterator
    */
   public function xpath($path) {

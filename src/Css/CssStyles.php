@@ -1,4 +1,5 @@
 <?php
+
 /*
  * This file is part of the QuipXml package.
  *
@@ -9,20 +10,33 @@
  */
 
 namespace QuipXml\Css;
-class CssStyles {
-  protected $styles = array();
 
-  static public function factory($css = NULL) {
-    $new = new CssStyles;
+/**
+ *
+ */
+class CssStyles {
+  protected $styles = [];
+
+  /**
+   *
+   */
+  public static function factory($css = NULL) {
+    $new = new CssStyles();
     return $new->parse($css);
   }
 
+  /**
+   *
+   */
   public function &delete($property) {
     $property = $this->property($property);
     unset($this->styles[$property]);
     return $this;
   }
 
+  /**
+   *
+   */
   public function get($property = NULL) {
     if (!isset($property)) {
       return $this->styles;
@@ -34,6 +48,9 @@ class CssStyles {
     return NULL;
   }
 
+  /**
+   *
+   */
   public function &op($property, $op, $value) {
     // Get the current value.
     $current = $this->get($property);
@@ -63,19 +80,25 @@ class CssStyles {
     return $this->set($property, $new);
   }
 
+  /**
+   *
+   */
   protected function property($property) {
     $property = strtolower(trim($property));
     return $property;
   }
 
+  /**
+   *
+   */
   public function &parse($css) {
     if (!isset($css)) {
       return $this;
     }
 
-    $styles = array();
+    $styles = [];
     $initial = preg_split('@\s*;+\s*@s', trim($css, "; \t\r\n"));
-    $parts = array();
+    $parts = [];
     while (!empty($initial)) {
       $p = array_shift($initial);
       if (strpos($p, 'url(') !== FALSE) {
@@ -97,21 +120,27 @@ class CssStyles {
     return $this;
   }
 
+  /**
+   *
+   */
   private function parseNumeric($value) {
-    // Define the numeric extractor
+    // Define the numeric extractor.
     $extractor = "@^(?<value>-?\d+(?:\.\d+)?)(?<units>[^\s]*)$@s";
     if (!preg_match($extractor, trim($value), $a)) {
       throw new \InvalidArgumentException("Non-numeric property value cannot be parsed.");
     }
-    return array(
+    return [
       'value' => $a['value'],
       'units' => $a['units'],
-    );
+    ];
   }
 
+  /**
+   *
+   */
   public function render() {
     ksort($this->styles);
-    $styles = array();
+    $styles = [];
     foreach ($this->styles as $k => $v) {
       $styles[] = "$k:$v";
     }
@@ -119,6 +148,9 @@ class CssStyles {
     return $flat;
   }
 
+  /**
+   *
+   */
   public function &set($property, $value = NULL) {
     if (!isset($value)) {
       if (is_array($property)) {

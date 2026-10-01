@@ -1,16 +1,26 @@
 <?php
+
 namespace QuipXml\Calendar;
+
 use QuipXml\Quip;
 use QuipXml\Xml\QuipXmlFormatter;
+
+/**
+ *
+ */
 class QuipCalendarIcsFormatter extends QuipXmlFormatter {
+
   public function __construct($settings = NULL) {
-    $this->settings = array_merge($this->settings, array(
+    $this->settings = array_merge($this->settings, [
       'fix_uid_length' => TRUE,
-    ), (array) $settings);
+    ], (array) $settings);
   }
 
-  static public function escape($text) {
-    static $cleantr = array(
+  /**
+   *
+   */
+  public static function escape($text) {
+    static $cleantr = [
       '&lt;' => '<',
       '&gt;' => '>',
       '\\' => '\\\\',
@@ -18,10 +28,13 @@ class QuipCalendarIcsFormatter extends QuipXmlFormatter {
       "\r" => '\\r',
       "," => '\\,',
       ";" => '\\;',
-    );
+    ];
     return strtr($text, $cleantr);
   }
 
+  /**
+   *
+   */
   protected function &fixDtEnd(&$xml) {
     foreach ($xml->qxpath('//vevent') as $vevent) {
       $dtstart = (string) $vevent->dtstart;
@@ -37,6 +50,9 @@ class QuipCalendarIcsFormatter extends QuipXmlFormatter {
     return $this;
   }
 
+  /**
+   *
+   */
   protected function &fixUid(&$xml) {
     if ($this->settings['fix_uid_length']) {
       // Limit uid length to 71 (75-char line minus "UID:")
@@ -58,6 +74,9 @@ class QuipCalendarIcsFormatter extends QuipXmlFormatter {
     return $this;
   }
 
+  /**
+   *
+   */
   protected function getDateTime($value, &$xml) {
     // Get the timezone.
     $tz = NULL;
@@ -77,6 +96,9 @@ class QuipCalendarIcsFormatter extends QuipXmlFormatter {
     return $value;
   }
 
+  /**
+   *
+   */
   public function getFormattedOuter($xml) {
     $this->fixUid($xml);
     $this->fixDtEnd($xml);
@@ -84,11 +106,14 @@ class QuipCalendarIcsFormatter extends QuipXmlFormatter {
     return $output;
   }
 
+  /**
+   *
+   */
   protected function getFormattedRecursiveIterator($xml, $tag = NULL) {
     static $lf = "\r\n";
     $output = '';
 
-    // Add the attributes
+    // Add the attributes.
     $attrs = '';
     foreach ($xml->attributes() as $k => $v) {
       $k = strtoupper($k);
@@ -102,7 +127,7 @@ class QuipCalendarIcsFormatter extends QuipXmlFormatter {
       // Sort output by groups:
       //   1. x-*
       //   2. other
-      //   3. items with children
+      //   3. items with children.
       $output2 = $output3 = '';
       foreach ($xml->children() as $child) {
         ++$number_children;
@@ -128,8 +153,7 @@ class QuipCalendarIcsFormatter extends QuipXmlFormatter {
         $output = "BEGIN:$tag$lf{$output}END:$tag$lf";
       }
       else {
-        $value = isset($override_value) ? $override_value
-          : self::escape($xml->html());
+        $value = $override_value ?? self::escape($xml->html());
         if (substr($tag, 0, 2) === 'DT' && $attrs === '') {
           $value = $this->getDateTime($value, $xml);
           $xml->html($value);
@@ -157,10 +181,16 @@ class QuipCalendarIcsFormatter extends QuipXmlFormatter {
     return $output;
   }
 
+  /**
+   *
+   */
   protected function getFormattedTagOverrideChildren($xml, $tag) {
     return FALSE;
   }
 
+  /**
+   *
+   */
   protected function getFormattedTagOrderedChildren($xml, $children) {
     $output = '';
     foreach ($children as $i => $child) {
