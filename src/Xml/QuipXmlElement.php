@@ -80,7 +80,7 @@ class QuipXmlElement extends \SimpleXMLElement implements QuipXmlElementInterfac
       try {
         $new = dom_import_simplexml($content);
       }
-      catch (\TypeError $e) {
+      catch (\TypeError | \ValueError $e) {
         throw new \InvalidArgumentException('The content is not a node in a document.', 0, $e);
       }
     }
@@ -237,7 +237,7 @@ class QuipXmlElement extends \SimpleXMLElement implements QuipXmlElementInterfac
     try {
       return dom_import_simplexml($this);
     }
-    catch (\TypeError) {
+    catch (\TypeError | \ValueError) {
       // A missing child has no node behind it.
       return FALSE;
     }
