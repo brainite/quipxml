@@ -469,6 +469,25 @@ final class QuipXmlElementTest extends TestCase {
   }
 
   /**
+   * A registered XPath prefix reaches the nodes a query returns (#5).
+   */
+  public function testRegisteredNamespaceReachesQueryResults(): void {
+    $page = Quip::load('<html xmlns="http://www.w3.org/1999/xhtml"><body><table><tr><td><table><tr><td>inner</td></tr></table></td></tr></table></body></html>');
+    $page->registerXPathNamespace('h', 'http://www.w3.org/1999/xhtml');
+    $inner = [];
+    foreach ($page->qxpath('/h:html/h:body/h:table/h:tr') as $row) {
+      foreach ($row->qxpath('.//h:tr') as $nested) {
+        $inner[] = trim((string) $nested->qxpath('./h:td')->text());
+      }
+    }
+
+    $this->assertSame(['inner'], $inner);
+    $this->assertCount(2, $page->qxpath('//h:table')->qxparent()->qxpath('.//h:td'));
+    $this->assertCount(2, $page->qxpath('//h:nothing')->qxpath('//h:table'));
+    $this->assertSame('tr', $page->qxpath('//h:table')->eq(0)->children()?->getName());
+  }
+
+  /**
    * Whether a result is an empty result rather than a node or set.
    */
   private static function isEmptyResult(QuipXmlElementInterface $result): bool {

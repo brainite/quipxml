@@ -49,6 +49,16 @@ class QuipXmlElement extends \SimpleXMLElement implements QuipXmlElementInterfac
   private static ?\WeakMap $emptyRoots = NULL;
 
   /**
+   * The XPath namespace prefixes registered on each node.
+   *
+   * SimpleXML keeps a registration on the one object it was made on; Quip
+   * copies it onto every node it hands back from that object (#5).
+   *
+   * @var \WeakMap<\QuipXml\Xml\QuipXmlElement, array<string, string>>|null
+   */
+  private static ?\WeakMap $xpathNamespaces = NULL;
+
+  /**
    * Converts content into a DOM node that can be inserted next to this node.
    *
    * @param string|\SimpleXMLElement|\DOMNode $content
@@ -117,7 +127,27 @@ class QuipXmlElement extends \SimpleXMLElement implements QuipXmlElementInterfac
       throw new \LogicException('SimpleXML did not return a ' . self::class . '.');
     }
     self::$emptyRoots[$empty] = $root;
-    return $empty;
+    return $this->passNamespaces($empty);
+  }
+
+  /**
+   * Registers this node's XPath namespace prefixes on a node it returns.
+   *
+   * @param T $node
+   *   The node being handed back.
+   *
+   * @return T
+   *   The same node.
+   *
+   * @template T of \QuipXml\Xml\QuipXmlElement
+   */
+  private function passNamespaces(QuipXmlElement $node): QuipXmlElement {
+    if ($node !== $this) {
+      foreach (self::$xpathNamespaces[$this] ?? [] as $prefix => $namespace) {
+        $node->registerXPathNamespace($prefix, $namespace);
+      }
+    }
+    return $node;
   }
 
   /**
@@ -145,7 +175,7 @@ class QuipXmlElement extends \SimpleXMLElement implements QuipXmlElementInterfac
    */
   public function addChild(string $qualifiedName, ?string $value = NULL, ?string $namespace = NULL): ?static {
     $child = parent::addChild($qualifiedName, $value, $namespace);
-    return $child instanceof static ? $child : NULL;
+    return $child instanceof static ? $this->passNamespaces($child) : NULL;
   }
 
   /**
@@ -175,7 +205,7 @@ class QuipXmlElement extends \SimpleXMLElement implements QuipXmlElementInterfac
    */
   public function attributes(?string $namespaceOrPrefix = NULL, bool $isPrefix = FALSE): ?static {
     $attributes = parent::attributes($namespaceOrPrefix, $isPrefix);
-    return $attributes instanceof static ? $attributes : NULL;
+    return $attributes instanceof static ? $this->passNamespaces($attributes) : NULL;
   }
 
   /**
@@ -194,7 +224,7 @@ class QuipXmlElement extends \SimpleXMLElement implements QuipXmlElementInterfac
    */
   public function children(?string $namespaceOrPrefix = NULL, bool $isPrefix = FALSE): ?static {
     $children = parent::children($namespaceOrPrefix, $isPrefix);
-    return $children instanceof static ? $children : NULL;
+    return $children instanceof static ? $this->passNamespaces($children) : NULL;
   }
 
   /**
@@ -472,6 +502,26 @@ class QuipXmlElement extends \SimpleXMLElement implements QuipXmlElementInterfac
 
   /**
    * {@inheritdoc}
+   *
+   * The prefix also reaches every node Quip returns from this one: query
+   * results, empty results, and the results of children(), attributes() and
+   * addChild(). Nodes SimpleXML makes itself, by property access or by
+   * iterating a SimpleXML list, start without it.
+   */
+  // phpcs:ignore Drupal.NamingConventions.ValidFunctionName.ScopeNotCamelCaps -- SimpleXMLElement::registerXPathNamespace() names it.
+  public function registerXPathNamespace(string $prefix, string $namespace): bool {
+    if (!parent::registerXPathNamespace($prefix, $namespace)) {
+      return FALSE;
+    }
+    self::$xpathNamespaces ??= new \WeakMap();
+    $registered = self::$xpathNamespaces[$this] ?? [];
+    $registered[$prefix] = $namespace;
+    self::$xpathNamespaces[$this] = $registered;
+    return TRUE;
+  }
+
+  /**
+   * {@inheritdoc}
    */
   public function qxparent(): QuipXmlElement|QuipXmlElementIterator {
     return $this->qxpath('..');
@@ -494,12 +544,15 @@ class QuipXmlElement extends \SimpleXMLElement implements QuipXmlElementInterfac
       // class made still knows its document.
       $root = self::$emptyRoots[$this] ?? NULL;
       if ($root !== NULL && str_starts_with($path, '/')) {
-        return $root->qxpath($path);
+        return $this->passNamespaces($root)->qxpath($path);
       }
       return $this->getEmptyElement();
     }
     if ($results === []) {
       return $this->getEmptyElement();
+    }
+    foreach ($results as $result) {
+      $this->passNamespaces($result);
     }
     return new QuipXmlElementIterator(new \ArrayIterator($results));
   }

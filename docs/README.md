@@ -62,6 +62,12 @@ it holds:
 - An empty result casts to `FALSE`, iterates nothing, and ignores every verb,
   so a chain over a missing node needs no guard.
 
+A prefix registered with `registerXPathNamespace()` carries over to every
+node Quip returns from that node (query results, `children()`,
+`attributes()`, `addChild()`), so a nested query needs no second
+registration. Nodes SimpleXML makes itself — property access such as
+`$quip->child`, or `foreach` over a SimpleXML list — start without it.
+
 An attribute node (from `attributes()` or `qxpath('//@name')`) reads and
 writes its value through `text()` and is deleted by `remove()`; the
 structural verbs throw a `\LogicException` on it.
