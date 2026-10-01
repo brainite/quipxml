@@ -359,6 +359,59 @@ final class QuipXmlElementIteratorTest extends TestCase {
   }
 
   /**
+   * Unwrap() removes each shared parent once and nothing above it.
+   */
+  public function testUnwrapRemovesEachParentOnce(): void {
+    $doc = Quip::load('<r><g><p><a/><b/></p></g><q><c/></q></r>');
+    $doc->qxpath('//p/* | //q/*')->unwrap();
+
+    $this->assertSame('<r><g><a/><b/></g><c/></r>', $doc->htmlOuter());
+  }
+
+  /**
+   * Attributes() flattens several attributes from several nodes.
+   */
+  public function testAttributesFlattenSeveralPerNode(): void {
+    $attributes = Quip::load('<r><i a="1" b="2"/><i c="3"/></r>')->qxpath('//i')->attributes();
+
+    $this->assertNotNull($attributes);
+    $this->assertCount(3, $attributes);
+    $this->assertSame('123', (string) $attributes);
+  }
+
+  /**
+   * The first node's namespace wins a shared prefix.
+   */
+  public function testNamespaceMergeKeepsTheFirst(): void {
+    $doc = Quip::load('<r><x xmlns:p="urn:one"><p:a/></x><y xmlns:p="urn:two"><p:b/></y></r>');
+
+    $this->assertSame(['p' => 'urn:one'], $doc->qxpath('/r/*')->getNamespaces(TRUE));
+  }
+
+  /**
+   * A property no node has reads as an empty result, and isset() agrees.
+   */
+  public function testMissingPropertyIsEmpty(): void {
+    $days = $this->timetable()->qxpath('//day');
+
+    $this->assertTrue(self::isEmptyResult($days->nothing));
+    $this->assertFalse(isset($days->nothing));
+    $this->assertTrue(isset($days->slot));
+  }
+
+  /**
+   * Children flattened from a set keep the set's registered prefixes (#5).
+   */
+  public function testFlattenedChildrenKeepRegisteredPrefixes(): void {
+    $doc = Quip::load('<r xmlns="urn:r"><day><slot/></day><day><slot/></day></r>');
+    $doc->registerXPathNamespace('t', 'urn:r');
+    $slots = $doc->qxpath('//t:day')->children();
+
+    $this->assertNotNull($slots);
+    $this->assertCount(2, $slots->qxpath('self::t:slot'));
+  }
+
+  /**
    * Whether a result is an empty result rather than a node or set.
    */
   private static function isEmptyResult(QuipXmlElementInterface $result): bool {

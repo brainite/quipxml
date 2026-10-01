@@ -91,7 +91,26 @@ class QuipXmlElementIterator extends \IteratorIterator implements QuipXmlElement
         $children[] = $child;
       }
     }
-    return new self($children);
+    $set = new self($children);
+    return count($set) > 0 ? $set : $this->getEmptyElement();
+  }
+
+  /**
+   * Whether any node has a child of that name, as SimpleXML answers isset().
+   *
+   * @param string $name
+   *   The child element name.
+   *
+   * @return bool
+   *   TRUE when at least one node has such a child.
+   */
+  public function __isset(string $name): bool {
+    foreach ($this->nodes as $node) {
+      if (isset($node->{$name})) {
+        return TRUE;
+      }
+    }
+    return FALSE;
   }
 
   /**
@@ -135,8 +154,16 @@ class QuipXmlElementIterator extends \IteratorIterator implements QuipXmlElement
     $results = [];
     foreach ($this->nodes as $node) {
       $result = $callback($node);
-      if ($result instanceof self || ($flatten && $result instanceof QuipXmlElement)) {
+      if ($result instanceof self) {
         foreach ($result as $item) {
+          $results[] = $item;
+        }
+      }
+      elseif ($flatten && $result instanceof QuipXmlElement) {
+        // Iterating a SimpleXML list makes new nodes; give them the list's
+        // registered prefixes.
+        foreach ($result as $item) {
+          QuipXmlElement::shareXpathNamespaces($result, $item);
           $results[] = $item;
         }
       }
@@ -383,8 +410,10 @@ class QuipXmlElementIterator extends \IteratorIterator implements QuipXmlElement
    * {@inheritdoc}
    */
   public function unwrap(): QuipXmlElement|QuipXmlElementIterator {
-    // Siblings share a parent, which is removed once.
+    // Siblings share a parent, which is removed once; every parent is read
+    // before any is removed, as removing one moves its children up a level.
     $parents = [];
+    $unwrap = [];
     foreach ($this->nodes as $node) {
       $parent = $node->dom()->parentNode ?? NULL;
       foreach ($parents as $seen) {
@@ -395,6 +424,9 @@ class QuipXmlElementIterator extends \IteratorIterator implements QuipXmlElement
       if ($parent !== NULL) {
         $parents[] = $parent;
       }
+      $unwrap[] = $node;
+    }
+    foreach ($unwrap as $node) {
       $node->unwrap();
     }
     return $this;

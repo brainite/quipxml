@@ -218,12 +218,8 @@ class OneLiner {
             break;
 
           case '.':
-            if (!isset($attrs['class']) || strlen($attrs['class']) == 0) {
-              $attrs['class'] = $arr['value'];
-            }
-            else {
-              $attrs['class'] = $arr['value'];
-            }
+            // A later class replaces an earlier one, whatever was passed in.
+            $attrs['class'] = $arr['value'];
             break;
         }
       }

@@ -75,7 +75,7 @@ class QuipXmlFormatter {
     $str = (string) $xml->asXML();
     if ($this->settings['formatOutput']) {
       $dom = new \DOMDocument();
-      $dom->preserveWhiteSpace = $this->settings['preserveWhitespace'];
+      $dom->preserveWhiteSpace = (bool) $this->settings['preserveWhitespace'];
       $dom->formatOutput = TRUE;
       $dom->loadXML($str);
       $str = (string) $dom->saveXML();

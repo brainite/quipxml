@@ -89,7 +89,11 @@ final class QuipXmlElementTest extends TestCase {
    */
   public function testInsertVerbsWorkOnAnEmptyElement(): void {
     $recipe = $this->recipe();
-    $recipe->notes->append('<p>Use fresh lemons</p>')->before('<hr/>')->after('<footer/>');
+    // A query result for an element with no children or attributes casts
+    // to FALSE, which 0.x read as "no node".
+    $notes = $recipe->qxpath('//notes')->eq(0);
+    $this->assertCount(0, $notes);
+    $notes->before('<hr/>')->after('<footer/>')->append('<p>Use fresh lemons</p>');
 
     $this->assertSame('<recipe><title>Lemon cake</title><steps><step n="1">Whisk</step><step n="2">Fold</step><step n="3">Bake</step></steps><hr/><notes><p>Use fresh lemons</p></notes><footer/></recipe>', $recipe->htmlOuter());
   }
@@ -205,9 +209,10 @@ final class QuipXmlElementTest extends TestCase {
    * Html() with a formatter returns indented children.
    */
   public function testHtmlWithFormatter(): void {
-    $quip = Quip::load('<list><a>1</a><b>2</b></list>');
+    $quip = Quip::load('<list><a><b>1</b></a></list>');
 
-    $this->assertSame('<a>1</a><b>2</b>', $quip->html(Quip::formatter()));
+    $this->assertSame('<a><b>1</b></a>', $quip->html());
+    $this->assertSame("<a>\n  <b>1</b>\n</a>", $quip->html(Quip::formatter()));
   }
 
   /**
@@ -485,6 +490,102 @@ final class QuipXmlElementTest extends TestCase {
     $this->assertCount(2, $page->qxpath('//h:table')->qxparent()->qxpath('.//h:td'));
     $this->assertCount(2, $page->qxpath('//h:nothing')->qxpath('//h:table'));
     $this->assertSame('tr', $page->qxpath('//h:table')->eq(0)->children()?->getName());
+  }
+
+  /**
+   * Before() and after() refuse the root, which can have no sibling.
+   */
+  #[DataProvider('siblingVerbs')]
+  public function testSiblingVerbsRefuseTheRoot(string $verb): void {
+    $this->expectException(\LogicException::class);
+    $this->recipe()->{$verb}('<x/>');
+  }
+
+  /**
+   * The verbs that insert a sibling.
+   *
+   * @return array<string, array{string}>
+   *   Verb names.
+   */
+  public static function siblingVerbs(): array {
+    return [
+      'before' => ['before'],
+      'after' => ['after'],
+    ];
+  }
+
+  /**
+   * Text() writes an attribute value as text, escaping markup characters.
+   */
+  public function testAttributeTextIsEscaped(): void {
+    $recipe = $this->recipe();
+    $recipe->qxpath('//step[@n="1"]/@n')->text('x & "q" <y> &amp; z');
+
+    $this->assertSame('<step n="x &amp; &quot;q&quot; &lt;y&gt; &amp;amp; z">Whisk</step>', $recipe->qxpath('//step')->htmlOuter());
+    $this->assertSame('x & "q" <y> &amp; z', (string) $recipe->steps->step[0]['n']);
+  }
+
+  /**
+   * SetTag() returns the renamed node as a set of one.
+   */
+  public function testSetTagReturnsSetOfOne(): void {
+    $new = $this->recipe()->title->setTag('heading');
+
+    $this->assertInstanceOf(QuipXmlElementIterator::class, $new);
+    $this->assertCount(1, $new);
+  }
+
+  /**
+   * SetTag() keeps the element's namespace and its namespaced attributes.
+   */
+  public function testSetTagKeepsNamespaces(): void {
+    $page = Quip::load('<html xmlns="urn:page" xmlns:p="urn:p"><row><cell p:z="1" xml:lang="en">x</cell></row><s:shape xmlns:s="urn:s"><s:box/></s:shape></html>');
+    $page->registerXPathNamespace('h', 'urn:page');
+    $page->registerXPathNamespace('s', 'urn:s');
+    $page->qxpath('//h:cell')->setTag('head');
+    $page->qxpath('//s:box')->setTag('ring');
+
+    $this->assertCount(1, $page->qxpath('//h:row/h:head[@p:z="1"][@xml:lang="en"]'));
+    $this->assertCount(1, $page->qxpath('//s:shape/s:ring'));
+  }
+
+  /**
+   * Html() accepts the root of another document.
+   */
+  public function testHtmlAcceptsAnotherDocumentsRoot(): void {
+    $recipe = $this->recipe();
+    $recipe->title->html(Quip::load('<em>Lemon</em>'));
+
+    $this->assertSame('<title><em>Lemon</em></title>', $recipe->title->htmlOuter());
+  }
+
+  /**
+   * A registered prefix reaches every other node Quip returns (#5).
+   *
+   * Children, attributes, added children and renamed nodes.
+   */
+  public function testRegisteredNamespaceReachesOtherReturnedNodes(): void {
+    $page = Quip::load('<page xmlns="urn:page"><row><cell id="c1">x</cell></row></page>');
+    $page->registerXPathNamespace('h', 'urn:page');
+    $row = $page->qxpath('//h:row')->eq(0);
+
+    $this->assertCount(1, $row->children()?->qxpath('self::h:cell') ?? []);
+    // SimpleXML cannot query from a raw attributes() list; a set of
+    // attribute nodes can.
+    $this->assertCount(1, $row->qxpath('h:cell')->attributes()?->qxpath('ancestor::h:row') ?? []);
+    $this->assertCount(1, $row->addChild('note')?->qxpath('ancestor::h:page') ?? []);
+    $this->assertCount(1, $row->qxpath('h:cell')->setTag('head')->qxpath('ancestor::h:row'));
+  }
+
+  /**
+   * An empty result made from an attributes() list still knows its document.
+   */
+  public function testEmptyResultFromAttributesKeepsItsDocument(): void {
+    $recipe = $this->recipe();
+    $empty = $recipe->qxpath('//step')->eq(0)->attributes()?->qxpath('nothing');
+
+    $this->assertNotNull($empty);
+    $this->assertCount(3, $empty->qxpath('//step'));
   }
 
   /**

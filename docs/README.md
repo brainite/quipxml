@@ -59,8 +59,12 @@ it holds:
   and `getNamespaces()` and `getDocNamespaces()` merge every node's.
 - `children()` and `attributes()` flatten every node's children or
   attributes into one set.
-- An empty result casts to `FALSE`, iterates nothing, and ignores every verb,
-  so a chain over a missing node needs no guard.
+- An empty result casts to `FALSE` and iterates nothing; getters on it return
+  an empty string and the structural verbs do nothing, so a chain over a
+  missing node needs no guard. Writing into it with `html()` or `text()`
+  throws a `NotPermanentMemberException`, since there is nowhere to write.
+- `before()` and `after()` on the root element throw a `\LogicException`: a
+  document has one root.
 
 A prefix registered with `registerXPathNamespace()` carries over to every
 node Quip returns from that node (query results, `children()`,
@@ -75,12 +79,31 @@ structural verbs throw a `\LogicException` on it.
 Upgrading from 0.x
 ------------------
 
+- PHP 8.3 or later.
 - `xpath()`, `xparent()` and `xprev()` throw a `\RuntimeException`; call
   `qxpath()`, `qxparent()` and `qxprev()` (available since 0.4).
-- Parameters and return values are typed, and `remove()` returns a bool on a
-  set as well as on one node.
-- `before()`, `after()` and `append()` work on an element with no children or
-  attributes, and `setTag()` keeps an empty element well formed.
+- Every parameter and return value is typed and every file declares
+  `strict_types`. A caller without strict types still has scalars coerced,
+  but `NULL` where a string or array is expected is now a `TypeError`.
+- A subclass must match the typed signatures: an override without the
+  parent's return type is a fatal error. The protected helpers lost their
+  underscore: `contentToDom()`, `getEmptyElement()`, `eachGetIterator()`,
+  `eachSetter()`, `singleGetter()`.
+- `Quip::load()` refuses an empty document with an
+  `\InvalidArgumentException`.
+- `remove()` returns a bool on a set as well as on one node.
+- `setTag()` on a set returns the renamed nodes rather than the original
+  set; on one node it still returns a set of one.
+- Reading a property on a set of several nodes (`$set->item`) returns every
+  node's children of that name, not one per node.
+- Attribute nodes: `html()` and `text()` return the value, `text()` writes
+  it, and `remove()` deletes the attribute.
+- `before()` and `after()` on the root throw rather than build a second
+  root.
+- Fixed: `before()`, `after()` and `append()` act on a queried element that
+  has no children or attributes; `setTag()` keeps an empty element well
+  formed and keeps namespaces; `unwrap()` on siblings removes their shared
+  parent once.
 
 Development
 -----------

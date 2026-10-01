@@ -102,6 +102,15 @@ class QuipXmlElement extends \SimpleXMLElement implements QuipXmlElementInterfac
     if ($me === FALSE || $me->ownerDocument === NULL) {
       throw new NotPermanentMemberException();
     }
+    if ($new instanceof \DOMDocument) {
+      // The parent of another document's root: hold that root in a wrapper.
+      if ($new->documentElement === NULL) {
+        throw new \InvalidArgumentException('The content document has no root element.');
+      }
+      $wrapper = $me->ownerDocument->createElement('root');
+      $wrapper->appendChild($me->ownerDocument->importNode($new->documentElement, TRUE));
+      return $wrapper;
+    }
     if ($new->ownerDocument !== $me->ownerDocument) {
       $new = $me->ownerDocument->importNode($new->cloneNode(TRUE), TRUE);
     }
@@ -118,6 +127,12 @@ class QuipXmlElement extends \SimpleXMLElement implements QuipXmlElementInterfac
     self::$emptyRoots ??= new \WeakMap();
     $found = parent::xpath('/*');
     $root = is_array($found) ? ($found[0] ?? NULL) : NULL;
+    if (!$root instanceof self && ($document = $this->dom()) !== FALSE) {
+      // An attributes() list cannot run a query, but its node knows its
+      // document.
+      $element = $document->ownerDocument?->documentElement;
+      $root = $element !== NULL ? simplexml_import_dom($element, static::class) : NULL;
+    }
     if (!$root instanceof self) {
       $root = self::$emptyRoots[$this] ?? new self('<empty/>');
     }
@@ -151,6 +166,21 @@ class QuipXmlElement extends \SimpleXMLElement implements QuipXmlElementInterfac
   }
 
   /**
+   * Registers one node's XPath namespace prefixes on another.
+   *
+   * @param \QuipXml\Xml\QuipXmlElement $from
+   *   The node whose registrations are copied.
+   * @param \QuipXml\Xml\QuipXmlElement $to
+   *   The node that receives them.
+   *
+   * @internal
+   *   For QuipXmlElementIterator, which flattens SimpleXML lists into sets.
+   */
+  public static function shareXpathNamespaces(QuipXmlElement $from, QuipXmlElement $to): void {
+    $from->passNamespaces($to);
+  }
+
+  /**
    * Returns the element node a structural verb acts on.
    *
    * @param string $verb
@@ -171,6 +201,27 @@ class QuipXmlElement extends \SimpleXMLElement implements QuipXmlElementInterfac
   }
 
   /**
+   * Returns the element a sibling is inserted into.
+   *
+   * @param \DOMElement $me
+   *   This node's element.
+   * @param string $verb
+   *   The verb, for the error message.
+   *
+   * @return \DOMElement
+   *   The parent element.
+   *
+   * @throws \LogicException
+   *   When this is the root element, which can have no sibling element.
+   */
+  private function parentElement(\DOMElement $me, string $verb): \DOMElement {
+    if (!$me->parentNode instanceof \DOMElement) {
+      throw new \LogicException("$verb() cannot add a sibling to the root element.");
+    }
+    return $me->parentNode;
+  }
+
+  /**
    * {@inheritdoc}
    */
   public function addChild(string $qualifiedName, ?string $value = NULL, ?string $namespace = NULL): ?static {
@@ -183,8 +234,8 @@ class QuipXmlElement extends \SimpleXMLElement implements QuipXmlElementInterfac
    */
   public function after(string|\SimpleXMLElement|\DOMNode $content): static {
     $me = $this->elementNode('after');
-    if ($me !== NULL && $me->parentNode !== NULL) {
-      $me->parentNode->insertBefore($this->contentToDom($content), $me->nextSibling);
+    if ($me !== NULL) {
+      $this->parentElement($me, 'after')->insertBefore($this->contentToDom($content), $me->nextSibling);
     }
     return $this;
   }
@@ -213,8 +264,8 @@ class QuipXmlElement extends \SimpleXMLElement implements QuipXmlElementInterfac
    */
   public function before(string|\SimpleXMLElement|\DOMNode $content): static {
     $me = $this->elementNode('before');
-    if ($me !== NULL && $me->parentNode !== NULL) {
-      $me->parentNode->insertBefore($this->contentToDom($content), $me);
+    if ($me !== NULL) {
+      $this->parentElement($me, 'before')->insertBefore($this->contentToDom($content), $me);
     }
     return $this;
   }
@@ -404,11 +455,18 @@ class QuipXmlElement extends \SimpleXMLElement implements QuipXmlElementInterfac
       return $this;
     }
     if (preg_match('@^[a-z_][a-z0-9_.:-]*$@si', $tag)) {
-      $new = $me->ownerDocument->createElement($tag);
+      // A bare name takes this element's prefix and namespace; a prefixed
+      // name takes the namespace its prefix has here.
+      $prefix = str_contains($tag, ':') ? (string) strstr($tag, ':', TRUE) : $me->prefix;
+      $qualified = str_contains($tag, ':') || $prefix === '' ? $tag : "$prefix:$tag";
+      $namespace = $prefix !== '' ? $me->lookupNamespaceURI($prefix) : $me->namespaceURI;
+      $new = $namespace !== NULL ? $me->ownerDocument->createElementNS($namespace, $qualified) : $me->ownerDocument->createElement($qualified);
       foreach ($me->attributes as $attribute) {
-        $copy = $attribute->cloneNode();
-        if ($copy instanceof \DOMAttr) {
-          $new->setAttributeNode($copy);
+        if ($attribute->namespaceURI !== NULL) {
+          $new->setAttributeNS($attribute->namespaceURI, $attribute->nodeName, $attribute->value);
+        }
+        else {
+          $new->setAttribute($attribute->nodeName, $attribute->value);
         }
       }
     }
@@ -427,7 +485,7 @@ class QuipXmlElement extends \SimpleXMLElement implements QuipXmlElementInterfac
     if (!$quip instanceof self) {
       throw new \LogicException('SimpleXML could not import the new element.');
     }
-    return $quip;
+    return new QuipXmlElementIterator([$this->passNamespaces($quip)]);
   }
 
   /**
@@ -441,7 +499,8 @@ class QuipXmlElement extends \SimpleXMLElement implements QuipXmlElementInterfac
       return $me instanceof \DOMAttr ? (string) $this : strip_tags((string) $this->html());
     }
     if ($me instanceof \DOMAttr) {
-      $me->value = (string) $content;
+      // textContent stores the value as text; value would read entities.
+      $me->textContent = (string) $content;
       return $this;
     }
     if ($me === FALSE) {

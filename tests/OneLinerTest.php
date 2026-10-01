@@ -157,6 +157,13 @@ final class OneLinerTest extends TestCase {
   }
 
   /**
+   * A class in the wrapper replaces a non-string class attribute.
+   */
+  public function testWrapClassReplacesAnIntegerClass(): void {
+    $this->assertSame('<div class="note">Bread</div>', OneLiner::wrap('div.note', 'Bread', TRUE, ['class' => 3]));
+  }
+
+  /**
    * Data for testWrap().
    *
    * @return array<string, array{string, string, array<string, string>|null, string}>
