@@ -78,7 +78,7 @@ class QuipXmlElementIterator extends \IteratorIterator implements \Countable {
 
   protected function _getEmptyElement() {
     foreach ($this as $el) {
-      $results = $el->xpath('/*');
+      $results = $el->qxpath('/*');
       return $results[0]->{uniqid('empty element')};
     }
   }
@@ -199,12 +199,12 @@ class QuipXmlElementIterator extends \IteratorIterator implements \Countable {
     return $this->_eachSetter('wrapInner', $content);
   }
 
-  public function xparent() {
-    return $this->_eachGetIterator('xparent');
+  public function qxparent() {
+    return $this->_eachGetIterator('qxparent');
   }
 
-  public function xprev() {
-    return $this->_eachGetIterator('xprev');
+  public function qxprev() {
+    return $this->_eachGetIterator('qxprev');
   }
 
   /**
@@ -213,16 +213,40 @@ class QuipXmlElementIterator extends \IteratorIterator implements \Countable {
    * @param path string An XPath path
    * @return QuipXmlElementIterator
    */
-  public function xpath($path) {
+  public function qxpath($path) {
     if ($path[0] === '/') {
       $this->rewind();
       if ($this->valid()) {
-        return $this->current()->xpath($path);
+        return $this->current()->qxpath($path);
       }
       return $this->_getEmptyElement();
     }
 
-    return $this->_eachGetIterator('xpath', $path);
+    return $this->_eachGetIterator('qxpath', $path);
+  }
+
+  /**
+   * @deprecated in quipxml:0.4.0 and is removed from quipxml:1.0.0. Use qxparent() instead.
+   */
+  public function xparent() {
+    return $this->qxparent();
+  }
+
+  /**
+   * @deprecated in quipxml:0.4.0 and is removed from quipxml:1.0.0. Use qxprev() instead.
+   */
+  public function xprev() {
+    return $this->qxprev();
+  }
+
+  /**
+   * Runs XPath query on XML data
+   * @deprecated in quipxml:0.4.0 and is removed from quipxml:1.0.0. Use qxpath() instead.
+   * @param path string An XPath path
+   * @return QuipXmlElementIterator
+   */
+  public function xpath($path) {
+    return $this->qxpath($path);
   }
 
 }

@@ -17,7 +17,7 @@ class QuipCalendarJsonFeedFormatter extends QuipCalendarIcsFormatter {
   protected function getDateTime($value, &$xml) {
     // Get the timezone.
     $tz = NULL;
-    $tz_name = trim($xml->xpath('//x-wr-timezone')->html());
+    $tz_name = trim($xml->qxpath('//x-wr-timezone')->html());
     if ($tz_name !== '') {
       $tz = new \DateTimeZone($tz_name);
       $utc = new \DateTimeZone("UTC");

@@ -65,7 +65,7 @@ class QuipXmlElement extends \SimpleXMLElement {
       return $this;
     }
     $me = $this->dom();
-    $parent = $this->xparent()->dom();
+    $parent = $this->qxparent()->dom();
     $new = $this->_contentToDom($content);
     $parent->insertBefore($new, $me);
     return $this;
@@ -81,7 +81,7 @@ class QuipXmlElement extends \SimpleXMLElement {
       return $this;
     }
     $me = $this->dom();
-    $parent = $this->xparent()->dom();
+    $parent = $this->qxparent()->dom();
     $new = $this->_contentToDom($content);
     if (isset($me->nextSibling)) {
       $parent->insertBefore($new, $me->nextSibling);
@@ -136,7 +136,7 @@ class QuipXmlElement extends \SimpleXMLElement {
     $cursor = $this;
     while (TRUE) {
       if (preg_match('@[^/]@', $path)) {
-        $match = $this->xpath($path);
+        $match = $this->qxpath($path);
         if (!empty($match)) {
           $cursor = $match->current();
         }
@@ -165,7 +165,7 @@ class QuipXmlElement extends \SimpleXMLElement {
           $limit = (int) $arr['pos'];
           while (--$limit >= 0) {
             $new = $cursor->addChild($arr['name']);
-            $match = $cursor->xpath($part);
+            $match = $cursor->qxpath($part);
             if (!empty($match)) {
               $found = TRUE;
               $cursor = $new;
@@ -267,7 +267,7 @@ class QuipXmlElement extends \SimpleXMLElement {
     else {
       $tagName = preg_replace('@^<([^\s>/]+)[\s>/].*$@s', '\1', $tag);
     }
-    return $this->wrapInner($tag)->xpath($tagName)->unwrap();
+    return $this->wrapInner($tag)->qxpath($tagName)->unwrap();
   }
 
   public function text($content = NULL) {
@@ -290,7 +290,7 @@ class QuipXmlElement extends \SimpleXMLElement {
   }
 
   public function unwrap() {
-    $parent = $this->xparent()->dom();
+    $parent = $this->qxparent()->dom();
     if (!$parent) {
       return $this->_getEmptyElement();
     }
@@ -325,31 +325,60 @@ class QuipXmlElement extends \SimpleXMLElement {
 
   /**
    * Get the parent node or an empty iterator.
-   * @return \QuipXml\Xml\QuipXmlElement
+   * @return \QuipXml\Xml\QuipXmlElementIterator
    */
-  public function xparent() {
-    return $this->xpath('..');
+  public function qxparent() {
+    return $this->qxpath('..');
   }
 
   /**
    * Get the preceding sibling for this node
    * @return \QuipXml\Xml\QuipXmlElementIterator
    */
-  public function xprev() {
-    return $this->xpath("preceding-sibling::*[1]");
+  public function qxprev() {
+    return $this->qxpath("preceding-sibling::*[1]");
   }
 
   /**
-   * Wrap the xpath results in a Quip iterator.
+   * Run an XPath query and wrap the results in a Quip iterator.
    * @see SimpleXMLElement::xpath()
    * @return \QuipXml\Xml\QuipXmlElementIterator
    */
-  public function xpath($path) {
+  public function qxpath($path) {
     $results = parent::xpath($path);
     if (empty($results)) {
       return $this->_getEmptyElement();
     }
     return new QuipXmlElementIterator(new \ArrayIterator($results));
+  }
+
+  /**
+   * Get the parent node or an empty iterator.
+   * @deprecated in quipxml:0.4.0 and is removed from quipxml:1.0.0. Use qxparent() instead.
+   * @return \QuipXml\Xml\QuipXmlElementIterator
+   */
+  public function xparent() {
+    return $this->qxparent();
+  }
+
+  /**
+   * Get the preceding sibling for this node
+   * @deprecated in quipxml:0.4.0 and is removed from quipxml:1.0.0. Use qxprev() instead.
+   * @return \QuipXml\Xml\QuipXmlElementIterator
+   */
+  public function xprev() {
+    return $this->qxprev();
+  }
+
+  /**
+   * Wrap the xpath results in a Quip iterator.
+   * @deprecated in quipxml:0.4.0 and is removed from quipxml:1.0.0. Use qxpath() instead.
+   * @see SimpleXMLElement::xpath()
+   * @return \QuipXml\Xml\QuipXmlElementIterator
+   */
+  #[\ReturnTypeWillChange]
+  public function xpath($path) {
+    return $this->qxpath($path);
   }
 
 }
