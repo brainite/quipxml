@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<ruleset name="QuipXml">
+  <description>Coding standard checks for QuipXml</description>
+
+  <file>src</file>
+  <file>tests</file>
+
+  <arg name="extensions" value="php"/>
+  <arg name="colors"/>
+  <arg value="sp"/>
+  <arg value="n"/>
+
+  <rule ref="Generic.PHP.RequireStrictTypes"/>
+</ruleset>

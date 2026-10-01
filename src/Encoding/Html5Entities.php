@@ -1,9 +1,32 @@
 <?php
+
+/*
+ * This file is part of the QuipXml package.
+ *
+ * (c) Greg Payne <1994413+stackpr@users.noreply.github.com>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
+declare(strict_types=1);
+
 namespace QuipXml\Encoding;
 
+/**
+ * The HTML5 named character references.
+ */
 class Html5Entities {
-  static public function getNamedEntities() {
-    return array(
+
+  /**
+   * Lists the HTML5 named character references.
+   *
+   * @return array<string, int>
+   *   Code points keyed by entity name, without the `&` and `;`. Names are
+   *   case-sensitive, and several names may share one code point.
+   */
+  public static function getNamedEntities(): array {
+    return [
       'Tab' => 9,
       'NewLine' => 10,
       'excl' => 33,
@@ -2035,8 +2058,7 @@ class Html5Entities {
       'xopf' => 120169,
       'yopf' => 120170,
       'zopf' => 120171,
-    );
+    ];
   }
 
 }
-

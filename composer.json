@@ -1,25 +1,46 @@
 {
-    "name":"brainite/quipxml",
-    "type":"library",
-    "description":"Enhanced SimpleXml-based toolkit",
-    "keywords":[
+    "name": "brainite/quipxml",
+    "type": "library",
+    "description": "Enhanced SimpleXml-based toolkit",
+    "keywords": [
         "xml"
     ],
-    "homepage":"https://github.com/brainite/quipxml",
-    "license":"MIT",
-    "authors":[
+    "homepage": "https://github.com/brainite/quipxml",
+    "license": "MIT",
+    "authors": [
         {
-            "name":"Greg Payne",
-            "homepage":"https://brainite.org/",
-            "role":"Packager"
+            "name": "Greg Payne",
+            "homepage": "https://brainite.org/",
+            "role": "Packager"
         }
     ],
-    "require":{
-        "php":">=5.4"
+    "require": {
+        "php": ">=8.3",
+        "ext-dom": "*",
+        "ext-libxml": "*",
+        "ext-simplexml": "*"
     },
-    "autoload":{
-        "psr-4":{
+    "require-dev": {
+        "phpstan/phpstan": "^2.1",
+        "phpunit/phpunit": "^12.5 || ^13.3",
+        "squizlabs/php_codesniffer": "^3.13 || ^4.0"
+    },
+    "autoload": {
+        "psr-4": {
             "QuipXml\\": "src/"
         }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "QuipXml\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "lint": "phpcs",
+        "analyse": "phpstan analyse --no-progress",
+        "test": "phpunit"
+    },
+    "config": {
+        "sort-packages": true
     }
 }

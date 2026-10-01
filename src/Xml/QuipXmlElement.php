@@ -1,144 +1,322 @@
 <?php
+
 /*
  * This file is part of the QuipXml package.
  *
- * (c) Greg Payne
+ * (c) Greg Payne <1994413+stackpr@users.noreply.github.com>
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
 
+declare(strict_types=1);
+
 namespace QuipXml\Xml;
 
-use QuipXml\Quip;
+use QuipXml\Xml\Exception\NotPermanentMemberException;
 use QuipXml\Encoding\CharacterEncoding;
-class QuipXmlElement extends \SimpleXMLElement {
-  protected function _contentToDom($content, $return_parent = FALSE) {
+use QuipXml\Quip;
+
+/**
+ * A SimpleXML node with chainable, jQuery-style verbs.
+ *
+ * Quip::load() returns one, and so does every SimpleXML traversal from it
+ * (`$quip->list->item`), because SimpleXML keeps the class it was loaded
+ * with. A query (qxpath(), qxparent(), qxprev()) returns a
+ * QuipXmlElementIterator over the matches, or an empty QuipXmlElement when
+ * nothing matched.
+ *
+ * The node may be an element or, from attributes(), an attribute. The
+ * structural verbs (before, after, append, wrap, wrapInner, unwrap, setTag)
+ * throw a \LogicException on an attribute; html() and text() read its value,
+ * text() writes it, and remove() deletes it.
+ *
+ * SimpleXMLElement's own xpath() returns an array, and a method of that name
+ * returning anything else cannot be a legal override, so the Quip query
+ * methods carry a `q` prefix and xpath(), xparent() and xprev() throw.
+ */
+class QuipXmlElement extends \SimpleXMLElement implements QuipXmlElementInterface {
+
+  /**
+   * The document root behind each empty result this class handed out.
+   *
+   * An empty result is a missing child, which SimpleXML cannot query from;
+   * remembering its root lets an absolute qxpath() on it still search the
+   * document it came from.
+   *
+   * @var \WeakMap<\QuipXml\Xml\QuipXmlElement, \QuipXml\Xml\QuipXmlElement>|null
+   */
+  private static ?\WeakMap $emptyRoots = NULL;
+
+  /**
+   * The XPath namespace prefixes registered on each node.
+   *
+   * SimpleXML keeps a registration on the one object it was made on; Quip
+   * copies it onto every node it hands back from that object (#5).
+   *
+   * @var \WeakMap<\QuipXml\Xml\QuipXmlElement, array<string, string>>|null
+   */
+  private static ?\WeakMap $xpathNamespaces = NULL;
+
+  /**
+   * Converts content into a DOM node that can be inserted next to this node.
+   *
+   * @param string|\SimpleXMLElement|\DOMNode $content
+   *   Markup, or a node to copy in.
+   * @param bool $return_parent
+   *   For markup, return a wrapper element holding every top-level node of
+   *   the markup; for a node, return its parent.
+   *
+   * @return \DOMNode
+   *   A node owned by this node's document.
+   *
+   * @throws \InvalidArgumentException
+   *   When the content does not resolve to a node.
+   * @throws \QuipXml\Xml\Exception\NotPermanentMemberException
+   *   When this node is not attached to a document.
+   */
+  protected function contentToDom(string|\SimpleXMLElement|\DOMNode $content, bool $return_parent = FALSE): \DOMNode {
     if ($content instanceof \SimpleXMLElement) {
-      $new = dom_import_simplexml($content);
-      if ($return_parent) {
-        $new = $new->parentNode;
+      try {
+        $new = dom_import_simplexml($content);
+      }
+      catch (\TypeError | \ValueError $e) {
+        throw new \InvalidArgumentException('The content is not a node in a document.', 0, $e);
       }
     }
     elseif ($content instanceof \DOMNode) {
       $new = $content;
-      if ($return_parent) {
-        $new = $new->parentNode;
-      }
-    }
-    elseif (is_string($content)) {
-      if ($return_parent) {
-        $new = Quip::load("<root>$content</root>")->dom();
-      }
-      else {
-        $new = Quip::load($content)->dom();
-      }
     }
     else {
-      throw new \InvalidArgumentException("Unknown type of content.");
+      $new = Quip::load($return_parent ? "<root>$content</root>" : $content)->dom();
+      $return_parent = FALSE;
     }
-    if ($me = $this->dom()) {
-      if ($new->ownerDocument !== $me->ownerDocument) {
-        $clone = $new->cloneNode(TRUE);
-        $new = $me->ownerDocument->importNode($clone, TRUE);
-      }
+    if ($return_parent && $new instanceof \DOMNode) {
+      $new = $new->parentNode;
     }
-    else {
-      throw new Exception\NotPermanentMemberException;
+    if (!$new instanceof \DOMNode) {
+      throw new \InvalidArgumentException('The content does not resolve to a node.');
     }
 
+    $me = $this->dom();
+    if ($me === FALSE || $me->ownerDocument === NULL) {
+      throw new NotPermanentMemberException();
+    }
+    if ($new instanceof \DOMDocument) {
+      // The parent of another document's root: hold that root in a wrapper.
+      if ($new->documentElement === NULL) {
+        throw new \InvalidArgumentException('The content document has no root element.');
+      }
+      $wrapper = $me->ownerDocument->createElement('root');
+      $wrapper->appendChild($me->ownerDocument->importNode($new->documentElement, TRUE));
+      return $wrapper;
+    }
+    if ($new->ownerDocument !== $me->ownerDocument) {
+      $new = $me->ownerDocument->importNode($new->cloneNode(TRUE), TRUE);
+    }
     return $new;
   }
 
-  protected function _getEmptyElement() {
-    $results = parent::xpath('/*');
-    return $results[0]->{uniqid('empty element')};
+  /**
+   * Returns an empty result tied to this node's document.
+   *
+   * @return \QuipXml\Xml\QuipXmlElement
+   *   A missing child that casts to FALSE and iterates nothing.
+   */
+  protected function getEmptyElement(): QuipXmlElement {
+    self::$emptyRoots ??= new \WeakMap();
+    $found = parent::xpath('/*');
+    $root = is_array($found) ? ($found[0] ?? NULL) : NULL;
+    if (!$root instanceof self && ($document = $this->dom()) !== FALSE) {
+      // An attributes() list cannot run a query, but its node knows its
+      // document.
+      $element = $document->ownerDocument?->documentElement;
+      $root = $element !== NULL ? simplexml_import_dom($element, static::class) : NULL;
+    }
+    if (!$root instanceof self) {
+      $root = self::$emptyRoots[$this] ?? new self('<empty/>');
+    }
+    // '#empty' is not a legal XML name, so it never matches a real child.
+    $empty = $root->{'#empty'};
+    if (!$empty instanceof self) {
+      throw new \LogicException('SimpleXML did not return a ' . self::class . '.');
+    }
+    self::$emptyRoots[$empty] = $root;
+    return $this->passNamespaces($empty);
   }
 
   /**
-   * Add the content before this node.
-   * @param mixed $content
-   * @return \QuipXml\Xml\QuipXmlElement
+   * Registers this node's XPath namespace prefixes on a node it returns.
+   *
+   * @param T $node
+   *   The node being handed back.
+   *
+   * @return T
+   *   The same node.
+   *
+   * @template T of \QuipXml\Xml\QuipXmlElement
    */
-  public function before($content) {
-    if (FALSE === (bool) $this) {
-      return $this;
+  private function passNamespaces(QuipXmlElement $node): QuipXmlElement {
+    if ($node !== $this) {
+      foreach (self::$xpathNamespaces[$this] ?? [] as $prefix => $namespace) {
+        $node->registerXPathNamespace($prefix, $namespace);
+      }
     }
+    return $node;
+  }
+
+  /**
+   * Registers one node's XPath namespace prefixes on another.
+   *
+   * @param \QuipXml\Xml\QuipXmlElement $from
+   *   The node whose registrations are copied.
+   * @param \QuipXml\Xml\QuipXmlElement $to
+   *   The node that receives them.
+   *
+   * @internal
+   *   For QuipXmlElementIterator, which flattens SimpleXML lists into sets.
+   */
+  public static function shareXpathNamespaces(QuipXmlElement $from, QuipXmlElement $to): void {
+    $from->passNamespaces($to);
+  }
+
+  /**
+   * Returns the element node a structural verb acts on.
+   *
+   * @param string $verb
+   *   The verb, for the error message.
+   *
+   * @return \DOMElement|null
+   *   The element, or NULL when this is an empty result or a missing node.
+   *
+   * @throws \LogicException
+   *   When this node is an attribute.
+   */
+  private function elementNode(string $verb): ?\DOMElement {
     $me = $this->dom();
-    $parent = $this->qxparent()->dom();
-    $new = $this->_contentToDom($content);
-    $parent->insertBefore($new, $me);
+    if ($me instanceof \DOMAttr) {
+      throw new \LogicException("$verb() does not apply to an attribute node.");
+    }
+    return $me instanceof \DOMElement ? $me : NULL;
+  }
+
+  /**
+   * Returns the element a sibling is inserted into.
+   *
+   * @param \DOMElement $me
+   *   This node's element.
+   * @param string $verb
+   *   The verb, for the error message.
+   *
+   * @return \DOMElement
+   *   The parent element.
+   *
+   * @throws \LogicException
+   *   When this is the root element, which can have no sibling element.
+   */
+  private function parentElement(\DOMElement $me, string $verb): \DOMElement {
+    if (!$me->parentNode instanceof \DOMElement) {
+      throw new \LogicException("$verb() cannot add a sibling to the root element.");
+    }
+    return $me->parentNode;
+  }
+
+  /**
+   * @inheritDoc
+   */
+  public function addChild(string $qualifiedName, ?string $value = NULL, ?string $namespace = NULL): ?static {
+    $child = parent::addChild($qualifiedName, $value, $namespace);
+    return $child instanceof static ? $this->passNamespaces($child) : NULL;
+  }
+
+  /**
+   * @inheritDoc
+   */
+  public function after(string|\SimpleXMLElement|\DOMNode $content): static {
+    $me = $this->elementNode('after');
+    if ($me !== NULL) {
+      $this->parentElement($me, 'after')->insertBefore($this->contentToDom($content), $me->nextSibling);
+    }
     return $this;
   }
 
   /**
-   * Add the content after this node.
-   * @param mixed $content
-   * @return \QuipXml\Xml\QuipXmlElement
+   * @inheritDoc
    */
-  public function after($content) {
-    if (FALSE === (bool) $this) {
-      return $this;
-    }
-    $me = $this->dom();
-    $parent = $this->qxparent()->dom();
-    $new = $this->_contentToDom($content);
-    if (isset($me->nextSibling)) {
-      $parent->insertBefore($new, $me->nextSibling);
-    }
-    else {
-      $parent->appendChild($new);
+  public function append(string|\SimpleXMLElement|\DOMNode $content): static {
+    $me = $this->elementNode('append');
+    if ($me !== NULL) {
+      $me->appendChild($this->contentToDom($content));
     }
     return $this;
   }
 
   /**
-   * Add the content at the end of this node.
-   * @param mixed $content
-   * @return \QuipXml\Xml\QuipXmlElement
+   * @inheritDoc
    */
-  public function append($content) {
-    if (FALSE === (bool) $this) {
-      return $this;
+  public function attributes(?string $namespaceOrPrefix = NULL, bool $isPrefix = FALSE): ?static {
+    $attributes = parent::attributes($namespaceOrPrefix, $isPrefix);
+    return $attributes instanceof static ? $this->passNamespaces($attributes) : NULL;
+  }
+
+  /**
+   * @inheritDoc
+   */
+  public function before(string|\SimpleXMLElement|\DOMNode $content): static {
+    $me = $this->elementNode('before');
+    if ($me !== NULL) {
+      $this->parentElement($me, 'before')->insertBefore($this->contentToDom($content), $me);
     }
-    $me = $this->dom();
-    $new = $this->_contentToDom($content);
-    $me->appendChild($new);
     return $this;
   }
 
   /**
-   * Add the content before this node.
-   * @param int $index
-   * @return \QuipXml\Xml\QuipXmlElement
+   * @inheritDoc
    */
-  public function eq($index = 0) {
+  public function children(?string $namespaceOrPrefix = NULL, bool $isPrefix = FALSE): ?static {
+    $children = parent::children($namespaceOrPrefix, $isPrefix);
+    return $children instanceof static ? $this->passNamespaces($children) : NULL;
+  }
+
+  /**
+   * @inheritDoc
+   */
+  public function dom(int $index = 0): \DOMNode|false {
+    if ($index !== 0) {
+      return FALSE;
+    }
+    try {
+      return dom_import_simplexml($this);
+    }
+    catch (\TypeError | \ValueError) {
+      // A missing child has no node behind it.
+      return FALSE;
+    }
+  }
+
+  /**
+   * A single node returns itself whatever the index.
+   *
+   * @inheritDoc
+   */
+  public function eq(int $index = 0): QuipXmlElement {
     return $this;
   }
 
   /**
-   * Get the DOM object associated with this node.
-   * @param int $index
-   * @return DOMElement|FALSE
+   * @inheritDoc
    */
-  public function dom($index = 0) {
-    if ($index == 0) {
-      $dom = @dom_import_simplexml($this);
-      return $dom;
-    }
-    return FALSE;
-  }
-
-  public function get($xpath) {
-    // Break the parts and look for the cursor that exists.
-    $parts = explode('/', $xpath);
-    $path = $prev = array_shift($parts);
+  public function get(string $path): QuipXmlElement {
+    // Walk the longest prefix of the path that already exists.
+    $parts = explode('/', $path);
+    $prev = (string) array_shift($parts);
+    $prefix = $prev;
     $cursor = $this;
     while (TRUE) {
-      if (preg_match('@[^/]@', $path)) {
-        $match = $this->qxpath($path);
-        if (!empty($match)) {
-          $cursor = $match->current();
+      if (preg_match('@[^/]@', $prefix)) {
+        $match = $this->qxpath($prefix);
+        if ($match instanceof QuipXmlElementIterator && count($match) > 0) {
+          $cursor = $match->eq(0);
         }
         else {
           array_unshift($parts, $prev);
@@ -148,237 +326,326 @@ class QuipXmlElement extends \SimpleXMLElement {
       if (empty($parts)) {
         break;
       }
-      $prev = array_shift($parts);
-      $path .= '/' . $prev;
+      $prev = (string) array_shift($parts);
+      $prefix .= '/' . $prev;
     }
 
-    // Examine remaining parts for viability.
-    if (preg_match("@[:\.\*]|//@s", join('/', $parts))) {
-      throw new \InvalidArgumentException("Unable to init XML path ($path) containing [:.*] or //");
+    // Only plain names and positional filters can be created.
+    if (preg_match("@[:\.\*]|//@s", implode('/', $parts))) {
+      throw new \InvalidArgumentException("Unable to init XML path ($prefix) containing [:.*] or //");
     }
 
-    // Add the parts to build the XML.
     foreach ($parts as $part) {
-      if (strpos($part, '[') !== FALSE) {
-        if (preg_match('@^(?<name>.*)\[(?<pos>\d+)\]@s', $part, $arr)) {
-          $found = FALSE;
-          $limit = (int) $arr['pos'];
-          while (--$limit >= 0) {
-            $new = $cursor->addChild($arr['name']);
-            $match = $cursor->qxpath($part);
-            if (!empty($match)) {
-              $found = TRUE;
-              $cursor = $new;
-              break;
-            }
-          }
-
-          if (!$found) {
-            throw new \ErrorException("Unable to build XML part ($part) for path ($xpath)."
-              . $cursor->htmlOuter() . get_class($cursor));
+      if (strpos($part, '[') === FALSE) {
+        $next = $cursor->addChild($part);
+      }
+      elseif (preg_match('@^(?<name>.*)\[(?<pos>\d+)\]$@s', $part, $arr)) {
+        // Add siblings of that name until the position exists.
+        $next = NULL;
+        for ($limit = (int) $arr['pos']; $limit > 0; --$limit) {
+          $new = $cursor->addChild($arr['name']);
+          if (count($cursor->qxpath($part)) > 0) {
+            $next = $new;
+            break;
           }
         }
-        else {
-          throw new \InvalidArgumentException("Unable to init XML path ($path) containing complex filters");
+        if ($next === NULL) {
+          throw new \ErrorException("Unable to build XML part ($part) for path ($path).");
         }
       }
       else {
-        $cursor = $cursor->addChild($part);
+        throw new \InvalidArgumentException("Unable to init XML path ($prefix) containing complex filters");
       }
+      if (!$next instanceof self) {
+        throw new NotPermanentMemberException();
+      }
+      $cursor = $next;
     }
 
     return $cursor;
   }
 
   /**
-   * @todo set the html content.
-   * @todo adjust the xml for html display.
-   * @return mixed
+   * @inheritDoc
+   *
+   * @phpstan-return ($content is null|\QuipXml\Xml\QuipXmlFormatter ? string : static)
    */
-  public function html($content = NULL) {
-    if (!isset($content)) {
-      $str = trim(parent::asXML());
+  public function html(string|\SimpleXMLElement|\DOMNode|QuipXmlFormatter|null $content = NULL): string|static {
+    if ($content === NULL) {
+      $me = $this->dom();
+      if ($me === FALSE) {
+        return '';
+      }
+      if ($me instanceof \DOMAttr) {
+        return (string) $this;
+      }
+      $str = trim((string) parent::asXML());
+      // Drop the opening tag (after any XML declaration) and the closing tag.
       do {
-        list($open, $str) = explode('>', $str, 2);
+        [$open, $str] = array_pad(explode('>', $str, 2), 2, '');
       } while (substr($open, -1) === '?');
       $tmp = explode('<', $str);
       array_pop($tmp);
-      $str = join('<', $tmp);
-      $str = trim($str);
-      $str = strtr($str, array(
+      return strtr(trim(implode('<', $tmp)), [
         "\r" => '',
-        '&#13;' => "",
+        '&#13;' => '',
         '&#xA0;' => '&nbsp;',
-      ));
-      return $str;
+      ]);
     }
-    elseif ($content instanceof QuipXmlFormatter) {
+    if ($content instanceof QuipXmlFormatter) {
       return $content->getFormattedInner($this);
     }
-    else {
-      $new = $this->_contentToDom($content, TRUE);
-      if ($me = $this->dom()) {
-        while ($me->childNodes->length != 0) {
-          $me->removeChild($me->childNodes->item(0));
-        }
-        foreach ($new->childNodes as $child) {
-          $me->appendChild($child->cloneNode(TRUE));
-        }
-      }
-      else {
-        throw new Exception\NotPermanentMemberException;
-      }
-    }
-    return $this;
-  }
 
-  public function htmlOuter($content = NULL) {
-    if (!isset($content)) {
-      $str = parent::asXML();
-      $str = preg_replace('@^<\?xml.*?\?>\s*@s', '', $str);
-      $str = strtr($str, array(
-        "\r" => '',
-        '&#13;' => "",
-        '&#xA0;' => '&nbsp;',
-      ));
-      return trim($str);
-    }
-    elseif ($content instanceof QuipXmlFormatter) {
-      return $content->getFormattedOuter($this);
-    }
-    return $this;
-  }
-
-  public function remove() {
     $me = $this->dom();
-    if ($me === FALSE || !isset($me->parentNode)) {
+    if ($me instanceof \DOMAttr) {
+      throw new \LogicException('html() cannot write markup into an attribute node; use text().');
+    }
+    if ($me === FALSE) {
+      throw new NotPermanentMemberException();
+    }
+    $new = $this->contentToDom($content, TRUE);
+    while ($me->firstChild !== NULL) {
+      $me->removeChild($me->firstChild);
+    }
+    foreach ($new->childNodes as $child) {
+      $me->appendChild($child->cloneNode(TRUE));
+    }
+    return $this;
+  }
+
+  /**
+   * @inheritDoc
+   */
+  public function htmlOuter(?QuipXmlFormatter $formatter = NULL): string {
+    if ($this->dom() === FALSE) {
+      return '';
+    }
+    if ($formatter !== NULL) {
+      return $formatter->getFormattedOuter($this);
+    }
+    $str = (string) preg_replace('@^<\?xml.*?\?>\s*@s', '', (string) parent::asXML());
+    return trim(strtr($str, [
+      "\r" => '',
+      '&#13;' => '',
+      '&#xA0;' => '&nbsp;',
+    ]));
+  }
+
+  /**
+   * @inheritDoc
+   */
+  public function remove(): bool {
+    $me = $this->dom();
+    if ($me instanceof \DOMAttr) {
+      return $me->ownerElement !== NULL && $me->ownerElement->removeAttributeNode($me) !== FALSE;
+    }
+    if ($me === FALSE || $me->parentNode === NULL) {
       return FALSE;
     }
-    return (bool) $me->parentNode->removeChild($me);
+    $me->parentNode->removeChild($me);
+    return TRUE;
   }
 
-  public function setTag($tag) {
-    if (preg_match('@^[a-z0-9]+$@si', $tag)) {
-      $tagName = $tag;
-      $current = $this->htmlOuter();
-      $tag = "<$tag " . preg_replace('@^<[^\s>]+([^>]*)>.*$@s', '\1', $current)
-        . "/>";
+  /**
+   * @inheritDoc
+   */
+  public function setTag(string $tag): QuipXmlElement|QuipXmlElementIterator {
+    $me = $this->elementNode('setTag');
+    if ($me === NULL || $me->parentNode === NULL || $me->ownerDocument === NULL) {
+      return $this;
     }
-    else {
-      $tagName = preg_replace('@^<([^\s>/]+)[\s>/].*$@s', '\1', $tag);
-    }
-    return $this->wrapInner($tag)->qxpath($tagName)->unwrap();
-  }
-
-  public function text($content = NULL) {
-    if (!isset($content)) {
-      return strip_tags($this->html());
-    }
-    elseif ($me = $this->dom()) {
-      if (is_string($content) || is_numeric($content)) {
-        $content = CharacterEncoding::toHtml((string) $content, array(
-          'escape_ampersand_selective' => TRUE,
-          'entities_prefer_numeric' => TRUE,
-        ));
-        $me->nodeValue = $content;
+    if (preg_match('@^[a-z_][a-z0-9_.:-]*$@si', $tag)) {
+      // A bare name takes this element's prefix and namespace; a prefixed
+      // name takes the namespace its prefix has here.
+      $prefix = str_contains($tag, ':') ? (string) strstr($tag, ':', TRUE) : $me->prefix;
+      $qualified = str_contains($tag, ':') || $prefix === '' ? $tag : "$prefix:$tag";
+      $namespace = $prefix !== '' ? $me->lookupNamespaceURI($prefix) : $me->namespaceURI;
+      $new = $namespace !== NULL ? $me->ownerDocument->createElementNS($namespace, $qualified) : $me->ownerDocument->createElement($qualified);
+      foreach ($me->attributes as $attribute) {
+        if ($attribute->namespaceURI !== NULL) {
+          $new->setAttributeNS($attribute->namespaceURI, $attribute->nodeName, $attribute->value);
+        }
+        else {
+          $new->setAttribute($attribute->nodeName, $attribute->value);
+        }
       }
     }
     else {
-      throw new Exception\NotPermanentMemberException;
+      // An opening tag on its own is not well formed; close it.
+      $new = $this->contentToDom((string) preg_replace('@^(<[^<>/]+?)\s*/?>$@s', '$1/>', $tag));
     }
+    if (!$new instanceof \DOMElement) {
+      throw new \InvalidArgumentException("setTag() needs a tag name or an opening tag, not ($tag).");
+    }
+    while ($me->firstChild !== NULL) {
+      $new->appendChild($me->firstChild);
+    }
+    $me->parentNode->replaceChild($new, $me);
+    $quip = simplexml_import_dom($new, static::class);
+    if (!$quip instanceof self) {
+      throw new \LogicException('SimpleXML could not import the new element.');
+    }
+    return new QuipXmlElementIterator([$this->passNamespaces($quip)]);
+  }
+
+  /**
+   * @inheritDoc
+   *
+   * @phpstan-return ($content is null ? string : static)
+   */
+  public function text(string|int|float|null $content = NULL): string|static {
+    $me = $this->dom();
+    if ($content === NULL) {
+      return $me instanceof \DOMAttr ? (string) $this : strip_tags((string) $this->html());
+    }
+    if ($me instanceof \DOMAttr) {
+      // textContent stores the value as text; value would read entities.
+      $me->textContent = (string) $content;
+      return $this;
+    }
+    if ($me === FALSE) {
+      throw new NotPermanentMemberException();
+    }
+    // DOM reads entities in an element's nodeValue, so escape bare ampersands
+    // and leave existing entities alone.
+    $me->nodeValue = CharacterEncoding::toHtml((string) $content, [
+      'escape_ampersand_selective' => TRUE,
+      'entities_prefer_numeric' => TRUE,
+    ]);
     return $this;
   }
 
-  public function unwrap() {
-    $parent = $this->qxparent()->dom();
-    if (!$parent) {
-      return $this->_getEmptyElement();
+  /**
+   * @inheritDoc
+   */
+  public function unwrap(): QuipXmlElement|QuipXmlElementIterator {
+    $parent = $this->elementNode('unwrap')?->parentNode;
+    // The root has no element to hand its children to.
+    if (!$parent instanceof \DOMElement || !$parent->parentNode instanceof \DOMElement) {
+      return $this->getEmptyElement();
     }
-    foreach ($parent->childNodes as $child) {
-      $parent->parentNode->insertBefore($child->cloneNode(TRUE), $parent);
+    while ($parent->firstChild !== NULL) {
+      $parent->parentNode->insertBefore($parent->firstChild, $parent);
     }
     $parent->parentNode->removeChild($parent);
     return $this;
   }
 
-  public function wrap($content) {
-    if ($me = $this->dom()) {
-      $parent = $me->parentNode;
-      $new = $this->_contentToDom($content);
-      $wrapper = $parent->insertBefore($new, $me);
+  /**
+   * @inheritDoc
+   */
+  public function wrap(string|\SimpleXMLElement|\DOMNode $content): static {
+    $me = $this->elementNode('wrap');
+    if ($me !== NULL && $me->parentNode !== NULL) {
+      $wrapper = $this->contentToDom($content);
+      $me->parentNode->replaceChild($wrapper, $me);
       $wrapper->appendChild($me);
     }
     return $this;
   }
 
-  public function wrapInner($content) {
-    if ($me = $this->dom()) {
-      $new = $this->_contentToDom($content);
-      while ($me->childNodes->length != 0) {
-        $c = $me->childNodes->item(0);
-        $new->appendChild($c);
+  /**
+   * @inheritDoc
+   */
+  public function wrapInner(string|\SimpleXMLElement|\DOMNode $content): static {
+    $me = $this->elementNode('wrapInner');
+    if ($me !== NULL) {
+      $wrapper = $this->contentToDom($content);
+      while ($me->firstChild !== NULL) {
+        $wrapper->appendChild($me->firstChild);
       }
-      $child = $me->appendChild($new);
+      $me->appendChild($wrapper);
     }
     return $this;
   }
 
   /**
-   * Get the parent node or an empty iterator.
-   * @return \QuipXml\Xml\QuipXmlElementIterator
+   * The prefix also reaches every node Quip returns from this one: query
+   * results, empty results, and the results of children(), attributes() and
+   * addChild(). Nodes SimpleXML makes itself, by property access or by
+   * iterating a SimpleXML list, start without it.
+   *
+   * @inheritDoc
    */
-  public function qxparent() {
+  public function registerXPathNamespace(string $prefix, string $namespace): bool {
+    if (!parent::registerXPathNamespace($prefix, $namespace)) {
+      return FALSE;
+    }
+    self::$xpathNamespaces ??= new \WeakMap();
+    $registered = self::$xpathNamespaces[$this] ?? [];
+    $registered[$prefix] = $namespace;
+    self::$xpathNamespaces[$this] = $registered;
+    return TRUE;
+  }
+
+  /**
+   * @inheritDoc
+   */
+  public function qxparent(): QuipXmlElement|QuipXmlElementIterator {
     return $this->qxpath('..');
   }
 
   /**
-   * Get the preceding sibling for this node
-   * @return \QuipXml\Xml\QuipXmlElementIterator
+   * @inheritDoc
    */
-  public function qxprev() {
-    return $this->qxpath("preceding-sibling::*[1]");
+  public function qxprev(): QuipXmlElement|QuipXmlElementIterator {
+    return $this->qxpath('preceding-sibling::*[1]');
   }
 
   /**
-   * Run an XPath query and wrap the results in a Quip iterator.
-   * @see SimpleXMLElement::xpath()
-   * @return \QuipXml\Xml\QuipXmlElementIterator
+   * @inheritDoc
    */
-  public function qxpath($path) {
+  public function qxpath(string $path): QuipXmlElement|QuipXmlElementIterator {
     $results = parent::xpath($path);
-    if (empty($results)) {
-      return $this->_getEmptyElement();
+    if (!is_array($results)) {
+      // SimpleXML cannot query from a missing node; an empty result this
+      // class made still knows its document.
+      $root = self::$emptyRoots[$this] ?? NULL;
+      if ($root !== NULL && str_starts_with($path, '/')) {
+        return $this->passNamespaces($root)->qxpath($path);
+      }
+      return $this->getEmptyElement();
+    }
+    if ($results === []) {
+      return $this->getEmptyElement();
+    }
+    foreach ($results as $result) {
+      $this->passNamespaces($result);
     }
     return new QuipXmlElementIterator(new \ArrayIterator($results));
   }
 
   /**
-   * Get the parent node or an empty iterator.
-   * @deprecated in quipxml:0.4.0 and is removed from quipxml:1.0.0. Use qxparent() instead.
-   * @return \QuipXml\Xml\QuipXmlElementIterator
+   * Retired: SimpleXMLElement::xpath() cannot be overridden to return a set.
+   *
+   * @param string $expression
+   *   Ignored.
+   *
+   * @throws \RuntimeException
+   *   Always.
    */
-  public function xparent() {
-    return $this->qxparent();
+  public function xpath(string $expression): never {
+    throw new \RuntimeException('QuipXml 1.0 retired xpath(); call qxpath(), which returns a QuipXmlElementIterator.');
   }
 
   /**
-   * Get the preceding sibling for this node
-   * @deprecated in quipxml:0.4.0 and is removed from quipxml:1.0.0. Use qxprev() instead.
-   * @return \QuipXml\Xml\QuipXmlElementIterator
+   * Retired: renamed qxparent() alongside qxpath().
+   *
+   * @throws \RuntimeException
+   *   Always.
    */
-  public function xprev() {
-    return $this->qxprev();
+  public function xparent(): never {
+    throw new \RuntimeException('QuipXml 1.0 retired xparent(); call qxparent().');
   }
 
   /**
-   * Wrap the xpath results in a Quip iterator.
-   * @deprecated in quipxml:0.4.0 and is removed from quipxml:1.0.0. Use qxpath() instead.
-   * @see SimpleXMLElement::xpath()
-   * @return \QuipXml\Xml\QuipXmlElementIterator
+   * Retired: renamed qxprev() alongside qxpath().
+   *
+   * @throws \RuntimeException
+   *   Always.
    */
-  #[\ReturnTypeWillChange]
-  public function xpath($path) {
-    return $this->qxpath($path);
+  public function xprev(): never {
+    throw new \RuntimeException('QuipXml 1.0 retired xprev(); call qxprev().');
   }
 
 }

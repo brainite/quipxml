@@ -1,33 +1,37 @@
-name: Build Status
+name: CI
 
-# Controls when the workflow will run
 on:
-  # Triggers the workflow on push or pull request events but only for the master branch
   push:
     branches: [ master ]
   pull_request:
     branches: [ master ]
-
-  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
   build:
-    # The type of runner that the job will run on
     runs-on: ubuntu-latest
-
-    # Steps represent a sequence of tasks that will be executed as part of the job
+    strategy:
+      fail-fast: false
+      matrix:
+        php: [ '8.3', '8.4' ]
+    name: PHP ${{ matrix.php }}
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v2
-      
-      # Update using composer
-      - uses: php-actions/composer@v5
-      
-      # Run phpunit. v3 allows overrides of key variables.
-      - uses: php-actions/phpunit@v3
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
         with:
-          version: 5.7
-          php_version: 7.4
+          php-version: ${{ matrix.php }}
+          extensions: dom, libxml, mbstring, simplexml
+          coverage: none
+
+      - name: Install dependencies
+        run: composer install --no-interaction --no-progress
+
+      - name: Coding standards
+        run: composer lint
+
+      - name: Static analysis
+        run: composer analyse
+
+      - name: Tests
+        run: composer test

@@ -1,25 +1,77 @@
 <?php
+
 /*
  * This file is part of the QuipXml package.
  *
- * (c) Greg Payne
+ * (c) Greg Payne <1994413+stackpr@users.noreply.github.com>
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
 
+declare(strict_types=1);
+
 namespace QuipXml\Encoding;
+
+/**
+ * Converts text to HTML-safe character references and between encodings.
+ *
+ * The entity maps built here translate between code points, decimal and
+ * hexadecimal character references, HTML entity names and ASCII
+ * transliterations; toHtml() strings those maps together into a configurable
+ * pipeline.
+ */
 class CharacterEncoding {
+
+  /**
+   * Map mode: code point => entity name (`233 => 'eacute'`).
+   */
   const MODE_ORDINAL_NAME = 1;
+
+  /**
+   * Map mode: decimal reference => named entity (`'&#233;' => '&eacute;'`).
+   */
   const MODE_ENTITYDEC_ENTITYNAME = 2;
+
+  /**
+   * Map mode: decimal reference => bare value (`'&#233;' => 'eacute'`).
+   */
   const MODE_ENTITYDEC_NAME = 5;
+
+  /**
+   * Map mode: named entity => decimal reference (`'&eacute;' => '&#233;'`).
+   */
   const MODE_ENTITYNAME_ENTITYDEC = 4;
+
+  /**
+   * Map mode: hex reference => named entity (`'&#xe9;' => '&eacute;'`).
+   */
   const MODE_ENTITYHEX_ENTITYNAME = 3;
+
+  /**
+   * Map mode: bare value => decimal reference (`'eacute' => '&#233;'`).
+   */
   const MODE_CHAR_ENTITYDEC = 6;
-  static public function getEntitiesMap($entitySets = NULL, $mode = self::MODE_ORDINAL_NAME) {
+
+  /**
+   * Builds a translation map from one or more named entity sets.
+   *
+   * @param string|string[]|null $entitySets
+   *   The set id or ids to merge, case-insensitive: 'HTMLLAT1', 'HTMLSYMBOL',
+   *   'HTMLSPECIAL', 'ISO-8859-1', 'HTML5' or 'TRANSLITERATE_ASCII'. Where
+   *   sets share a code point, the earlier set wins. Empty selects the four
+   *   HTML 4 / ISO-8859-1 sets.
+   * @param int $mode
+   *   One of the MODE_* constants, choosing the key and value shape.
+   *
+   * @return array<int|string, string>
+   *   The map, ready for strtr() in every mode but MODE_ORDINAL_NAME, which
+   *   is keyed by code point.
+   */
+  public static function getEntitiesMap(array|string|null $entitySets = NULL, int $mode = self::MODE_ORDINAL_NAME): array {
     $entitySets = (array) $entitySets;
     if (empty($entitySets)) {
-      $entitySets = array(
+      $entitySets = [
         // https://www.w3.org/TR/html4/sgml/entities.html
         'HTMLLAT1',
         'HTMLSYMBOL',
@@ -28,505 +80,505 @@ class CharacterEncoding {
         'ISO-8859-1',
         // https://dev.w3.org/html5/html-author/charref
         // 'HTML5',
-      );
+      ];
     }
 
     // Define the sets.
-    static $charsets = array(
-    'HTMLLAT1' => array(
-    160 => 'nbsp',
-    161 => 'iexcl',
-    162 => 'cent',
-    163 => 'pound',
-    164 => 'curren',
-    165 => 'yen',
-    166 => 'brvbar',
-    167 => 'sect',
-    168 => 'uml',
-    169 => 'copy',
-    170 => 'ordf',
-    171 => 'laquo',
-    172 => 'not',
-    173 => 'shy',
-    174 => 'reg',
-    175 => 'macr',
-    176 => 'deg',
-    177 => 'plusmn',
-    178 => 'sup2',
-    179 => 'sup3',
-    180 => 'acute',
-    181 => 'micro',
-    182 => 'para',
-    183 => 'middot',
-    184 => 'cedil',
-    185 => 'sup1',
-    186 => 'ordm',
-    187 => 'raquo',
-    188 => 'frac14',
-    189 => 'frac12',
-    190 => 'frac34',
-    191 => 'iquest',
-    192 => 'Agrave',
-    193 => 'Aacute',
-    194 => 'Acirc',
-    195 => 'Atilde',
-    196 => 'Auml',
-    197 => 'Aring',
-    198 => 'AElig',
-    199 => 'Ccedil',
-    200 => 'Egrave',
-    201 => 'Eacute',
-    202 => 'Ecirc',
-    203 => 'Euml',
-    204 => 'Igrave',
-    205 => 'Iacute',
-    206 => 'Icirc',
-    207 => 'Iuml',
-    208 => 'ETH',
-    209 => 'Ntilde',
-    210 => 'Ograve',
-    211 => 'Oacute',
-    212 => 'Ocirc',
-    213 => 'Otilde',
-    214 => 'Ouml',
-    215 => 'times',
-    216 => 'Oslash',
-    217 => 'Ugrave',
-    218 => 'Uacute',
-    219 => 'Ucirc',
-    220 => 'Uuml',
-    221 => 'Yacute',
-    222 => 'THORN',
-    223 => 'szlig',
-    224 => 'agrave',
-    225 => 'aacute',
-    226 => 'acirc',
-    227 => 'atilde',
-    228 => 'auml',
-    229 => 'aring',
-    230 => 'aelig',
-    231 => 'ccedil',
-    232 => 'egrave',
-    233 => 'eacute',
-    234 => 'ecirc',
-    235 => 'euml',
-    236 => 'igrave',
-    237 => 'iacute',
-    238 => 'icirc',
-    239 => 'iuml',
-    240 => 'eth',
-    241 => 'ntilde',
-    242 => 'ograve',
-    243 => 'oacute',
-    244 => 'ocirc',
-    245 => 'otilde',
-    246 => 'ouml',
-    247 => 'divide',
-    248 => 'oslash',
-    249 => 'ugrave',
-    250 => 'uacute',
-    251 => 'ucirc',
-    252 => 'uuml',
-    253 => 'yacute',
-    254 => 'thorn',
-    255 => 'yuml',
-    ),
-    'HTMLSYMBOL' => array(
-    402 => 'fnof',
-    913 => 'Alpha',
-    914 => 'Beta',
-    915 => 'Gamma',
-    916 => 'Delta',
-    917 => 'Epsilon',
-    918 => 'Zeta',
-    919 => 'Eta',
-    920 => 'Theta',
-    921 => 'Iota',
-    922 => 'Kappa',
-    923 => 'Lambda',
-    924 => 'Mu',
-    925 => 'Nu',
-    926 => 'Xi',
-    927 => 'Omicron',
-    928 => 'Pi',
-    929 => 'Rho',
-    931 => 'Sigma',
-    932 => 'Tau',
-    933 => 'Upsilon',
-    934 => 'Phi',
-    935 => 'Chi',
-    936 => 'Psi',
-    937 => 'Omega',
-    945 => 'alpha',
-    946 => 'beta',
-    947 => 'gamma',
-    948 => 'delta',
-    949 => 'epsilon',
-    950 => 'zeta',
-    951 => 'eta',
-    952 => 'theta',
-    953 => 'iota',
-    954 => 'kappa',
-    955 => 'lambda',
-    956 => 'mu',
-    957 => 'nu',
-    958 => 'xi',
-    959 => 'omicron',
-    960 => 'pi',
-    961 => 'rho',
-    962 => 'sigmaf',
-    963 => 'sigma',
-    964 => 'tau',
-    965 => 'upsilon',
-    966 => 'phi',
-    967 => 'chi',
-    968 => 'psi',
-    969 => 'omega',
-    977 => 'thetasym',
-    978 => 'upsih',
-    982 => 'piv',
-    8226 => 'bull',
-    8230 => 'hellip',
-    8242 => 'prime',
-    8243 => 'Prime',
-    8254 => 'oline',
-    8260 => 'frasl',
-    8472 => 'weierp',
-    8465 => 'image',
-    8476 => 'real',
-    8482 => 'trade',
-    8501 => 'alefsym',
-    8592 => 'larr',
-    8593 => 'uarr',
-    8594 => 'rarr',
-    8595 => 'darr',
-    8596 => 'harr',
-    8629 => 'crarr',
-    8656 => 'lArr',
-    8657 => 'uArr',
-    8658 => 'rArr',
-    8659 => 'dArr',
-    8660 => 'hArr',
-    8704 => 'forall',
-    8706 => 'part',
-    8707 => 'exist',
-    8709 => 'empty',
-    8711 => 'nabla',
-    8712 => 'isin',
-    8713 => 'notin',
-    8715 => 'ni',
-    8719 => 'prod',
-    8721 => 'sum',
-    8722 => 'minus',
-    8727 => 'lowast',
-    8730 => 'radic',
-    8733 => 'prop',
-    8734 => 'infin',
-    8736 => 'ang',
-    8743 => 'and',
-    8744 => 'or',
-    8745 => 'cap',
-    8746 => 'cup',
-    8747 => 'int',
-    8756 => 'there4',
-    8764 => 'sim',
-    8773 => 'cong',
-    8776 => 'asymp',
-    8800 => 'ne',
-    8801 => 'equiv',
-    8804 => 'le',
-    8805 => 'ge',
-    8834 => 'sub',
-    8835 => 'sup',
-    8836 => 'nsub',
-    8838 => 'sube',
-    8839 => 'supe',
-    8853 => 'oplus',
-    8855 => 'otimes',
-    8869 => 'perp',
-    8901 => 'sdot',
-    8968 => 'lceil',
-    8969 => 'rceil',
-    8970 => 'lfloor',
-    8971 => 'rfloor',
-    9001 => 'lang',
-    9002 => 'rang',
-    9674 => 'loz',
-    9824 => 'spades',
-    9827 => 'clubs',
-    9829 => 'hearts',
-    9830 => 'diams',
-    ),
-    'HTMLSPECIAL' => array(
-    34 => 'quot',
-    38 => 'amp',
-    60 => 'lt',
-    62 => 'gt',
-    338 => 'OElig',
-    339 => 'oelig',
-    352 => 'Scaron',
-    353 => 'scaron',
-    376 => 'Yuml',
-    710 => 'circ',
-    732 => 'tilde',
-    8194 => 'ensp',
-    8195 => 'emsp',
-    8201 => 'thinsp',
-    8204 => 'zwnj',
-    8205 => 'zwj',
-    8206 => 'lrm',
-    8207 => 'rlm',
-    8211 => 'ndash',
-    8212 => 'mdash',
-    8216 => 'lsquo',
-    8217 => 'rsquo',
-    8218 => 'sbquo',
-    8220 => 'ldquo',
-    8221 => 'rdquo',
-    8222 => 'bdquo',
-    8224 => 'dagger',
-    8225 => 'Dagger',
-    8240 => 'permil',
-    8249 => 'lsaquo',
-    8250 => 'rsaquo',
-    8364 => 'euro',
-    ),
-    'ISO-8859-1' => array(
-    34 => 'quot',
-    38 => 'amp',
-    60 => 'lt',
-    62 => 'gt',
-    128 => 'euro',
-    130 => 'sbquo',
-    131 => 'fnof',
-    132 => 'bdquo',
-    133 => 'hellip',
-    134 => 'dagger',
-    135 => 'Dagger',
-    136 => 'circ',
-    137 => 'permil',
-    138 => 'Scaron',
-    139 => 'lsaquo',
-    140 => 'OElig',
-    142 => 'Zcaron',
-    145 => 'lsquo',
-    146 => 'rsquo',
-    147 => 'ldquo',
-    148 => 'rdquo',
-    149 => 'bull',
-    150 => 'ndash',
-    151 => 'mdash',
-    152 => 'tilde',
-    153 => 'trade',
-    154 => 'scaron',
-    155 => 'rsaquo',
-    156 => 'oelig',
-    158 => 'zcaron',
-    159 => 'Yuml',
-    160 => 'nbsp',
-    161 => 'iexcl',
-    162 => 'cent',
-    163 => 'pound',
-    164 => 'curren',
-    165 => 'yen',
-    166 => 'brvbar',
-    167 => 'sect',
-    168 => 'uml',
-    169 => 'copy',
-    170 => 'ordf',
-    171 => 'laquo',
-    172 => 'not',
-    173 => 'shy',
-    174 => 'reg',
-    175 => 'macr',
-    176 => 'deg',
-    177 => 'plusmn',
-    178 => 'sup2',
-    179 => 'sup3',
-    180 => 'acute',
-    181 => 'micro',
-    182 => 'para',
-    183 => 'middot',
-    184 => 'cedil',
-    185 => 'sup1',
-    186 => 'ordm',
-    187 => 'raquo',
-    188 => 'frac14',
-    189 => 'frac12',
-    190 => 'frac34',
-    191 => 'iquest',
-    192 => 'Agrave',
-    193 => 'Aacute',
-    194 => 'Acirc',
-    195 => 'Atilde',
-    196 => 'Auml',
-    197 => 'Aring',
-    198 => 'AElig',
-    199 => 'Ccedil',
-    200 => 'Egrave',
-    201 => 'Eacute',
-    202 => 'Ecirc',
-    203 => 'Euml',
-    204 => 'Igrave',
-    205 => 'Iacute',
-    206 => 'Icirc',
-    207 => 'Iuml',
-    208 => 'ETH',
-    209 => 'Ntilde',
-    210 => 'Ograve',
-    211 => 'Oacute',
-    212 => 'Ocirc',
-    213 => 'Otilde',
-    214 => 'Ouml',
-    215 => 'times',
-    216 => 'Oslash',
-    217 => 'Ugrave',
-    218 => 'Uacute',
-    219 => 'Ucirc',
-    220 => 'Uuml',
-    221 => 'Yacute',
-    222 => 'THORN',
-    223 => 'szlig',
-    224 => 'agrave',
-    225 => 'aacute',
-    226 => 'acirc',
-    227 => 'atilde',
-    228 => 'auml',
-    229 => 'aring',
-    230 => 'aelig',
-    231 => 'ccedil',
-    232 => 'egrave',
-    233 => 'eacute',
-    234 => 'ecirc',
-    235 => 'euml',
-    236 => 'igrave',
-    237 => 'iacute',
-    238 => 'icirc',
-    239 => 'iuml',
-    240 => 'eth',
-    241 => 'ntilde',
-    242 => 'ograve',
-    243 => 'oacute',
-    244 => 'ocirc',
-    245 => 'otilde',
-    246 => 'ouml',
-    247 => 'divide',
-    248 => 'oslash',
-    249 => 'ugrave',
-    250 => 'uacute',
-    251 => 'ucirc',
-    252 => 'uuml',
-    253 => 'yacute',
-    254 => 'thorn',
-    255 => 'yuml',
-    ),
-    // iconv underperformed for transliteration:
-    //   https://stackoverflow.com/questions/13614622/transliterate-any-convertible-utf8-char-into-ascii-equivalent
-    //   'Kaloúdēs' became 'Kalo?d?s'
-    // Thus, building a custom character reference.
-    // Need to add extended Latin:
-    //   https://www.w3schools.com/charsets/ref_utf_latin_extended_a.asp
-    //   https://www.w3schools.com/charsets/ref_utf_latin_extended_b.asp
-    //   https://www.w3schools.com/charsets/ref_utf_letterlike.asp
-    //   and consider: https://plato.stanford.edu/symbols/entities.html
-    'TRANSLITERATE_ASCII' => array(
-    145 => '\'',
-    146 => '\'',
-    147 => '"',
-    148 => '"',
-    150 => '-',
-    151 => '-',
-    160 => ' ',
-    169 => '(c)',
-    171 => '"',
-    174 => '(R)',
-    177 => '+/i',
-    187 => '"',
-    188 => '1/4',
-    189 => '1/2',
-    190 => '3/4',
-    // 191 => 'iquest',
-    192 => 'A',
-    193 => 'A',
-    194 => 'A',
-    195 => 'A',
-    196 => 'A',
-    197 => 'A',
-    198 => 'AE',
-    199 => 'C',
-    200 => 'E',
-    201 => 'E',
-    202 => 'E',
-    203 => 'E',
-    204 => 'I',
-    205 => 'I',
-    206 => 'I',
-    207 => 'I',
-    // 208 => 'ETH',
-    209 => 'N',
-    210 => 'O',
-    211 => 'O',
-    212 => 'O',
-    213 => 'O',
-    214 => 'O',
-    215 => 'x',
-    // times
-    216 => 'O',
-    217 => 'U',
-    218 => 'U',
-    219 => 'U',
-    220 => 'U',
-    221 => 'Y',
-    // 222 => 'THORN',
-    223 => 's',
-    224 => 'a',
-    225 => 'a',
-    226 => 'a',
-    227 => 'a',
-    228 => 'a',
-    229 => 'a',
-    230 => 'ae',
-    231 => 'c',
-    232 => 'e',
-    233 => 'e',
-    234 => 'e',
-    235 => 'e',
-    236 => 'i',
-    237 => 'i',
-    238 => 'i',
-    239 => 'i',
-    // 240 => 'eth',
-    241 => 'n',
-    242 => 'o',
-    243 => 'o',
-    244 => 'o',
-    245 => 'o',
-    246 => 'o',
-    248 => 'o',
-    249 => 'u',
-    250 => 'u',
-    251 => 'u',
-    252 => 'u',
-    253 => 'y',
-    // 254 => 'thorn',
-    255 => 'y',
-    275 => 'e',
-    8211 => '-',
-    8212 => '-',
-    8216 => '\'',
-    8217 => '\'',
-    8220 => '"',
-    8221 => '"',
-    ),
-    );
+    static $charsets = [
+      'HTMLLAT1' => [
+        160 => 'nbsp',
+        161 => 'iexcl',
+        162 => 'cent',
+        163 => 'pound',
+        164 => 'curren',
+        165 => 'yen',
+        166 => 'brvbar',
+        167 => 'sect',
+        168 => 'uml',
+        169 => 'copy',
+        170 => 'ordf',
+        171 => 'laquo',
+        172 => 'not',
+        173 => 'shy',
+        174 => 'reg',
+        175 => 'macr',
+        176 => 'deg',
+        177 => 'plusmn',
+        178 => 'sup2',
+        179 => 'sup3',
+        180 => 'acute',
+        181 => 'micro',
+        182 => 'para',
+        183 => 'middot',
+        184 => 'cedil',
+        185 => 'sup1',
+        186 => 'ordm',
+        187 => 'raquo',
+        188 => 'frac14',
+        189 => 'frac12',
+        190 => 'frac34',
+        191 => 'iquest',
+        192 => 'Agrave',
+        193 => 'Aacute',
+        194 => 'Acirc',
+        195 => 'Atilde',
+        196 => 'Auml',
+        197 => 'Aring',
+        198 => 'AElig',
+        199 => 'Ccedil',
+        200 => 'Egrave',
+        201 => 'Eacute',
+        202 => 'Ecirc',
+        203 => 'Euml',
+        204 => 'Igrave',
+        205 => 'Iacute',
+        206 => 'Icirc',
+        207 => 'Iuml',
+        208 => 'ETH',
+        209 => 'Ntilde',
+        210 => 'Ograve',
+        211 => 'Oacute',
+        212 => 'Ocirc',
+        213 => 'Otilde',
+        214 => 'Ouml',
+        215 => 'times',
+        216 => 'Oslash',
+        217 => 'Ugrave',
+        218 => 'Uacute',
+        219 => 'Ucirc',
+        220 => 'Uuml',
+        221 => 'Yacute',
+        222 => 'THORN',
+        223 => 'szlig',
+        224 => 'agrave',
+        225 => 'aacute',
+        226 => 'acirc',
+        227 => 'atilde',
+        228 => 'auml',
+        229 => 'aring',
+        230 => 'aelig',
+        231 => 'ccedil',
+        232 => 'egrave',
+        233 => 'eacute',
+        234 => 'ecirc',
+        235 => 'euml',
+        236 => 'igrave',
+        237 => 'iacute',
+        238 => 'icirc',
+        239 => 'iuml',
+        240 => 'eth',
+        241 => 'ntilde',
+        242 => 'ograve',
+        243 => 'oacute',
+        244 => 'ocirc',
+        245 => 'otilde',
+        246 => 'ouml',
+        247 => 'divide',
+        248 => 'oslash',
+        249 => 'ugrave',
+        250 => 'uacute',
+        251 => 'ucirc',
+        252 => 'uuml',
+        253 => 'yacute',
+        254 => 'thorn',
+        255 => 'yuml',
+      ],
+      'HTMLSYMBOL' => [
+        402 => 'fnof',
+        913 => 'Alpha',
+        914 => 'Beta',
+        915 => 'Gamma',
+        916 => 'Delta',
+        917 => 'Epsilon',
+        918 => 'Zeta',
+        919 => 'Eta',
+        920 => 'Theta',
+        921 => 'Iota',
+        922 => 'Kappa',
+        923 => 'Lambda',
+        924 => 'Mu',
+        925 => 'Nu',
+        926 => 'Xi',
+        927 => 'Omicron',
+        928 => 'Pi',
+        929 => 'Rho',
+        931 => 'Sigma',
+        932 => 'Tau',
+        933 => 'Upsilon',
+        934 => 'Phi',
+        935 => 'Chi',
+        936 => 'Psi',
+        937 => 'Omega',
+        945 => 'alpha',
+        946 => 'beta',
+        947 => 'gamma',
+        948 => 'delta',
+        949 => 'epsilon',
+        950 => 'zeta',
+        951 => 'eta',
+        952 => 'theta',
+        953 => 'iota',
+        954 => 'kappa',
+        955 => 'lambda',
+        956 => 'mu',
+        957 => 'nu',
+        958 => 'xi',
+        959 => 'omicron',
+        960 => 'pi',
+        961 => 'rho',
+        962 => 'sigmaf',
+        963 => 'sigma',
+        964 => 'tau',
+        965 => 'upsilon',
+        966 => 'phi',
+        967 => 'chi',
+        968 => 'psi',
+        969 => 'omega',
+        977 => 'thetasym',
+        978 => 'upsih',
+        982 => 'piv',
+        8226 => 'bull',
+        8230 => 'hellip',
+        8242 => 'prime',
+        8243 => 'Prime',
+        8254 => 'oline',
+        8260 => 'frasl',
+        8472 => 'weierp',
+        8465 => 'image',
+        8476 => 'real',
+        8482 => 'trade',
+        8501 => 'alefsym',
+        8592 => 'larr',
+        8593 => 'uarr',
+        8594 => 'rarr',
+        8595 => 'darr',
+        8596 => 'harr',
+        8629 => 'crarr',
+        8656 => 'lArr',
+        8657 => 'uArr',
+        8658 => 'rArr',
+        8659 => 'dArr',
+        8660 => 'hArr',
+        8704 => 'forall',
+        8706 => 'part',
+        8707 => 'exist',
+        8709 => 'empty',
+        8711 => 'nabla',
+        8712 => 'isin',
+        8713 => 'notin',
+        8715 => 'ni',
+        8719 => 'prod',
+        8721 => 'sum',
+        8722 => 'minus',
+        8727 => 'lowast',
+        8730 => 'radic',
+        8733 => 'prop',
+        8734 => 'infin',
+        8736 => 'ang',
+        8743 => 'and',
+        8744 => 'or',
+        8745 => 'cap',
+        8746 => 'cup',
+        8747 => 'int',
+        8756 => 'there4',
+        8764 => 'sim',
+        8773 => 'cong',
+        8776 => 'asymp',
+        8800 => 'ne',
+        8801 => 'equiv',
+        8804 => 'le',
+        8805 => 'ge',
+        8834 => 'sub',
+        8835 => 'sup',
+        8836 => 'nsub',
+        8838 => 'sube',
+        8839 => 'supe',
+        8853 => 'oplus',
+        8855 => 'otimes',
+        8869 => 'perp',
+        8901 => 'sdot',
+        8968 => 'lceil',
+        8969 => 'rceil',
+        8970 => 'lfloor',
+        8971 => 'rfloor',
+        9001 => 'lang',
+        9002 => 'rang',
+        9674 => 'loz',
+        9824 => 'spades',
+        9827 => 'clubs',
+        9829 => 'hearts',
+        9830 => 'diams',
+      ],
+      'HTMLSPECIAL' => [
+        34 => 'quot',
+        38 => 'amp',
+        60 => 'lt',
+        62 => 'gt',
+        338 => 'OElig',
+        339 => 'oelig',
+        352 => 'Scaron',
+        353 => 'scaron',
+        376 => 'Yuml',
+        710 => 'circ',
+        732 => 'tilde',
+        8194 => 'ensp',
+        8195 => 'emsp',
+        8201 => 'thinsp',
+        8204 => 'zwnj',
+        8205 => 'zwj',
+        8206 => 'lrm',
+        8207 => 'rlm',
+        8211 => 'ndash',
+        8212 => 'mdash',
+        8216 => 'lsquo',
+        8217 => 'rsquo',
+        8218 => 'sbquo',
+        8220 => 'ldquo',
+        8221 => 'rdquo',
+        8222 => 'bdquo',
+        8224 => 'dagger',
+        8225 => 'Dagger',
+        8240 => 'permil',
+        8249 => 'lsaquo',
+        8250 => 'rsaquo',
+        8364 => 'euro',
+      ],
+      'ISO-8859-1' => [
+        34 => 'quot',
+        38 => 'amp',
+        60 => 'lt',
+        62 => 'gt',
+        128 => 'euro',
+        130 => 'sbquo',
+        131 => 'fnof',
+        132 => 'bdquo',
+        133 => 'hellip',
+        134 => 'dagger',
+        135 => 'Dagger',
+        136 => 'circ',
+        137 => 'permil',
+        138 => 'Scaron',
+        139 => 'lsaquo',
+        140 => 'OElig',
+        142 => 'Zcaron',
+        145 => 'lsquo',
+        146 => 'rsquo',
+        147 => 'ldquo',
+        148 => 'rdquo',
+        149 => 'bull',
+        150 => 'ndash',
+        151 => 'mdash',
+        152 => 'tilde',
+        153 => 'trade',
+        154 => 'scaron',
+        155 => 'rsaquo',
+        156 => 'oelig',
+        158 => 'zcaron',
+        159 => 'Yuml',
+        160 => 'nbsp',
+        161 => 'iexcl',
+        162 => 'cent',
+        163 => 'pound',
+        164 => 'curren',
+        165 => 'yen',
+        166 => 'brvbar',
+        167 => 'sect',
+        168 => 'uml',
+        169 => 'copy',
+        170 => 'ordf',
+        171 => 'laquo',
+        172 => 'not',
+        173 => 'shy',
+        174 => 'reg',
+        175 => 'macr',
+        176 => 'deg',
+        177 => 'plusmn',
+        178 => 'sup2',
+        179 => 'sup3',
+        180 => 'acute',
+        181 => 'micro',
+        182 => 'para',
+        183 => 'middot',
+        184 => 'cedil',
+        185 => 'sup1',
+        186 => 'ordm',
+        187 => 'raquo',
+        188 => 'frac14',
+        189 => 'frac12',
+        190 => 'frac34',
+        191 => 'iquest',
+        192 => 'Agrave',
+        193 => 'Aacute',
+        194 => 'Acirc',
+        195 => 'Atilde',
+        196 => 'Auml',
+        197 => 'Aring',
+        198 => 'AElig',
+        199 => 'Ccedil',
+        200 => 'Egrave',
+        201 => 'Eacute',
+        202 => 'Ecirc',
+        203 => 'Euml',
+        204 => 'Igrave',
+        205 => 'Iacute',
+        206 => 'Icirc',
+        207 => 'Iuml',
+        208 => 'ETH',
+        209 => 'Ntilde',
+        210 => 'Ograve',
+        211 => 'Oacute',
+        212 => 'Ocirc',
+        213 => 'Otilde',
+        214 => 'Ouml',
+        215 => 'times',
+        216 => 'Oslash',
+        217 => 'Ugrave',
+        218 => 'Uacute',
+        219 => 'Ucirc',
+        220 => 'Uuml',
+        221 => 'Yacute',
+        222 => 'THORN',
+        223 => 'szlig',
+        224 => 'agrave',
+        225 => 'aacute',
+        226 => 'acirc',
+        227 => 'atilde',
+        228 => 'auml',
+        229 => 'aring',
+        230 => 'aelig',
+        231 => 'ccedil',
+        232 => 'egrave',
+        233 => 'eacute',
+        234 => 'ecirc',
+        235 => 'euml',
+        236 => 'igrave',
+        237 => 'iacute',
+        238 => 'icirc',
+        239 => 'iuml',
+        240 => 'eth',
+        241 => 'ntilde',
+        242 => 'ograve',
+        243 => 'oacute',
+        244 => 'ocirc',
+        245 => 'otilde',
+        246 => 'ouml',
+        247 => 'divide',
+        248 => 'oslash',
+        249 => 'ugrave',
+        250 => 'uacute',
+        251 => 'ucirc',
+        252 => 'uuml',
+        253 => 'yacute',
+        254 => 'thorn',
+        255 => 'yuml',
+      ],
+      // Iconv underperformed for transliteration (see
+      // https://stackoverflow.com/questions/13614622/transliterate-any-convertible-utf8-char-into-ascii-equivalent):
+      // 'Kaloúdēs' became 'Kalo?d?s'.
+      // Thus, building a custom character reference.
+      // Need to add extended Latin from
+      // https://www.w3schools.com/charsets/ref_utf_latin_extended_a.asp,
+      // https://www.w3schools.com/charsets/ref_utf_latin_extended_b.asp and
+      // https://www.w3schools.com/charsets/ref_utf_letterlike.asp, and consider
+      // https://plato.stanford.edu/symbols/entities.html.
+      'TRANSLITERATE_ASCII' => [
+        145 => '\'',
+        146 => '\'',
+        147 => '"',
+        148 => '"',
+        150 => '-',
+        151 => '-',
+        160 => ' ',
+        169 => '(c)',
+        171 => '"',
+        174 => '(R)',
+        177 => '+/i',
+        187 => '"',
+        188 => '1/4',
+        189 => '1/2',
+        190 => '3/4',
+      // 191 => 'iquest',
+        192 => 'A',
+        193 => 'A',
+        194 => 'A',
+        195 => 'A',
+        196 => 'A',
+        197 => 'A',
+        198 => 'AE',
+        199 => 'C',
+        200 => 'E',
+        201 => 'E',
+        202 => 'E',
+        203 => 'E',
+        204 => 'I',
+        205 => 'I',
+        206 => 'I',
+        207 => 'I',
+      // 208 => 'ETH',
+        209 => 'N',
+        210 => 'O',
+        211 => 'O',
+        212 => 'O',
+        213 => 'O',
+        214 => 'O',
+        215 => 'x',
+      // Times.
+        216 => 'O',
+        217 => 'U',
+        218 => 'U',
+        219 => 'U',
+        220 => 'U',
+        221 => 'Y',
+      // 222 => 'THORN',
+        223 => 's',
+        224 => 'a',
+        225 => 'a',
+        226 => 'a',
+        227 => 'a',
+        228 => 'a',
+        229 => 'a',
+        230 => 'ae',
+        231 => 'c',
+        232 => 'e',
+        233 => 'e',
+        234 => 'e',
+        235 => 'e',
+        236 => 'i',
+        237 => 'i',
+        238 => 'i',
+        239 => 'i',
+      // 240 => 'eth',
+        241 => 'n',
+        242 => 'o',
+        243 => 'o',
+        244 => 'o',
+        245 => 'o',
+        246 => 'o',
+        248 => 'o',
+        249 => 'u',
+        250 => 'u',
+        251 => 'u',
+        252 => 'u',
+        253 => 'y',
+      // 254 => 'thorn',
+        255 => 'y',
+        275 => 'e',
+        8211 => '-',
+        8212 => '-',
+        8216 => '\'',
+        8217 => '\'',
+        8220 => '"',
+        8221 => '"',
+      ],
+    ];
     if (!isset($charsets['HTML5'])) {
       $charsets['HTML5'] = array_flip(Html5Entities::getNamedEntities());
     }
 
     // Build the list of entities.
-    $ordinals = array();
+    $ordinals = [];
     foreach ($entitySets as $id) {
-      $id = strtoupper($id);
+      $id = strtoupper((string) $id);
       if (isset($charsets[$id])) {
         $ordinals = array_replace($charsets[$id], $ordinals);
       }
@@ -535,35 +587,35 @@ class CharacterEncoding {
     // Adjust for the mode.
     switch ($mode) {
       case self::MODE_ENTITYDEC_ENTITYNAME:
-        $entities = array();
+        $entities = [];
         foreach ($ordinals as $k => $v) {
           $entities["&#$k;"] = "&$v;";
         }
         return $entities;
 
       case self::MODE_ENTITYDEC_NAME:
-        $entities = array();
+        $entities = [];
         foreach ($ordinals as $k => $v) {
           $entities["&#$k;"] = $v;
         }
         return $entities;
 
       case self::MODE_ENTITYHEX_ENTITYNAME:
-        $entities = array();
+        $entities = [];
         foreach ($ordinals as $k => $v) {
           $entities["&#x" . dechex($k) . ";"] = "&$v;";
         }
         return $entities;
 
       case self::MODE_ENTITYNAME_ENTITYDEC:
-        $entities = array();
+        $entities = [];
         foreach ($ordinals as $k => $v) {
           $entities["&$v;"] = "&#$k;";
         }
         return $entities;
 
       case self::MODE_CHAR_ENTITYDEC:
-        $entities = array();
+        $entities = [];
         foreach ($ordinals as $k => $v) {
           $entities[$v] = "&#$k;";
         }
@@ -575,7 +627,54 @@ class CharacterEncoding {
     }
   }
 
-  static public function toHtml($source, $params = NULL) {
+  /**
+   * Converts a string to HTML with configurable entity handling.
+   *
+   * Non-ASCII characters always leave as character references. By default
+   * those are named entities wherever the HTML 4 / ISO-8859-1 sets name them
+   * and decimal references otherwise; carriage returns are dropped and
+   * markup passes through untouched.
+   *
+   * @param mixed $source
+   *   The text to convert. Anything other than a string is returned as is.
+   * @param mixed $params
+   *   A preset name, or an array of options (anything else is cast to an
+   *   array). The presets, also selectable through the 'default_settings'
+   *   option, are:
+   *   - 'ascii': from_encoding 'UTF-8' (aggressive), numeric entities and
+   *     ASCII transliteration of accented letters and typographic
+   *     punctuation.
+   *   - 'user input': purify through filter_xss() or HTMLPurifier.
+   *   The options, with their defaults:
+   *   - from_encoding (NULL): the source charset. 'UTF-8' decodes multibyte
+   *     sequences to numeric references itself; any other charset is
+   *     converted to UTF-8 through toEncoding() first.
+   *   - from_encoding_aggressive (FALSE): with 'UTF-8', also turn any
+   *     remaining 0x80-0x9F byte into a numeric reference.
+   *   - transliterate_ascii (FALSE): replace characters that have a plain
+   *     ASCII equivalent (é => e, — => -); forces entities_prefer_numeric.
+   *   - entities_prefer_numeric (FALSE): emit `&#233;` rather than
+   *     `&eacute;`.
+   *   - remove_carriage_return (TRUE): strip "\r".
+   *   - escape_ampersand (FALSE): escape every `&` before conversion.
+   *   - escape_ampersand_selective (FALSE): escape each `&` that does not
+   *     start something shaped like an entity (up to ten characters, then
+   *     `;`).
+   *   - escape_entities (FALSE): escape every `&` of the final output.
+   *   - tags ('ignore'): 'ignore' leaves markup alone, 'remove' strips tags
+   *     and escapes stray angle brackets, anything else ('disable') escapes
+   *     every angle bracket.
+   *   - tags_allowed (NULL): the element names the purifier keeps.
+   *   - purify (FALSE): TRUE picks filter_xss() or HTMLPurifier, whichever
+   *     exists; 'filter_xss' or 'htmlpurifier' names one.
+   *
+   * @return mixed
+   *   The converted string, or $source unchanged when it is not a string.
+   *
+   * @throws \InvalidArgumentException
+   *   When purification is requested and no matching purifier exists.
+   */
+  public static function toHtml(mixed $source, mixed $params = NULL): mixed {
     if (!is_string($source)) {
       return $source;
     }
@@ -585,41 +684,41 @@ class CharacterEncoding {
     // Normalize params.
     if (!is_array($params)) {
       if (is_string($params)) {
-        $params = array(
+        $params = [
           'default_settings' => $params,
-        );
+        ];
       }
       else {
         $params = (array) $params;
       }
     }
 
-    // Expand the default settings
+    // Expand the default settings.
     if (isset($params['default_settings'])) {
       switch ($params['default_settings']) {
         case 'ascii':
-          $params = array_replace(array(
+          $params = array_replace([
             'from_encoding' => 'UTF-8',
             'from_encoding_aggressive' => TRUE,
             'entities_prefer_numeric' => TRUE,
             'transliterate_ascii' => TRUE,
             'tags' => 'ignore',
-          ), $params);
+          ], $params);
           break;
 
         case 'user input':
-          $params = array_replace(array(
+          $params = array_replace([
             'purify' => TRUE,
-          ), $params);
+          ], $params);
           break;
       }
     }
 
     // Default params.
-    $params = array_replace(array(
+    $params = array_replace([
       'default_settings' => NULL,
       'from_encoding' => NULL,
-      // from: UTF-8, ISO-8859-1
+      // from: UTF-8, ISO-8859-1.
       'from_encoding_aggressive' => FALSE,
       'transliterate_ascii' => FALSE,
       'entities_prefer_numeric' => FALSE,
@@ -630,12 +729,9 @@ class CharacterEncoding {
       'tags' => 'ignore',
       'tags_allowed' => NULL,
       'purify' => FALSE,
-      // Potential params:
-      //       'quotes' => ENT_NOQUOTES,
-      //       // doctype = ENT_HTML5, ENT_XML1, ENT_HTML401
-      //       'doctype' => ENT_XHTML,
-      //       'allow_tags' => TRUE,
-    ), $params);
+      // Potential params: 'quotes' => ENT_NOQUOTES, 'doctype' => ENT_XHTML
+      // (or ENT_HTML5, ENT_XML1, ENT_HTML401), 'allow_tags' => TRUE.
+    ], $params);
 
     // Force configurations.
     if ($params['transliterate_ascii']) {
@@ -645,29 +741,27 @@ class CharacterEncoding {
     // If a source charset is provided, then convert to UTF-8.
     if (isset($params['from_encoding'])) {
       if ($params['from_encoding'] === 'UTF-8') {
-        /**
-         * Info on entity translations:
-         * @link http://www.w3.org/TR/xhtml-modularization/dtd_module_defs.html#a_xhtml_character_entities
-         * Most of the multibyte problems can be addressed by casting the character set out of UTF-8!
-         */
+        // Info on entity translations:
+        // http://www.w3.org/TR/xhtml-modularization/dtd_module_defs.html#a_xhtml_character_entities
+        // Most of the multibyte problems can be addressed by casting the
+        // character set out of UTF-8!
         if (preg_match('/[\194-\226]/', $output)) {
-          // utf8_decode breaks things it does not understand, so we use a fancier tactic.
-          // $data = utf8_decode($data);
-
-          /* Only do the slow convert if there are 8-bit characters */
-          /* avoid using 0xA0 (\240) in ereg ranges. RH73 does not like that */
+          // utf8_decode breaks things it does not understand, so we use a
+          // fancier tactic.
+          // Only do the slow convert if there are 8-bit characters.
+          // Avoid using 0xA0 (\240) in ereg ranges. RH73 does not like that.
           if (!preg_match("/[\200-\237\241-\377]/", $output)) {
           }
           else {
-            // decode three byte unicode characters
-            $output = preg_replace_callback("/([\340-\357])([\200-\277])([\200-\277])/", function ($matches) {
+            // Decode three byte unicode characters.
+            $output = (string) preg_replace_callback("/([\340-\357])([\200-\277])([\200-\277])/", function ($matches) {
               return '&#'
                 . ((ord($matches[1]) - 224) * 4096
                   + (ord($matches[2]) - 128) * 64 + (ord($matches[3]) - 128))
                 . ';';
             }, $output);
-            // decode two byte unicode characters
-            $output = preg_replace_callback("/([\300-\337])([\200-\277])/", function ($matches) {
+            // Decode two byte unicode characters.
+            $output = (string) preg_replace_callback("/([\300-\337])([\200-\277])/", function ($matches) {
               return '&#'
                 . ((ord($matches[1]) - 192) * 64 + (ord($matches[2]) - 128))
                 . ';';
@@ -677,7 +771,7 @@ class CharacterEncoding {
           if ($params['from_encoding_aggressive']) {
             // Unicode cleanup. Remove latin-supplement.
             // https://www.charbase.com/block/latin-supplement
-            $output = preg_replace_callback("@[\x80-\x9F]@", function ($matches) {
+            $output = (string) preg_replace_callback("@[\x80-\x9F]@", function ($matches) {
               return '&#' . ord($matches[0]) . ';';
             }, $output);
           }
@@ -685,15 +779,15 @@ class CharacterEncoding {
 
       }
       else {
-        $output = self::toEncoding($output, $params['from_encoding'], 'UTF-8');
+        $output = (string) self::toEncoding($output, (string) $params['from_encoding'], 'UTF-8');
       }
     }
 
-    // Remove carriage returns
+    // Remove carriage returns.
     if ($params['remove_carriage_return']) {
-      $output = strtr($output, array(
+      $output = strtr($output, [
         "\r" => '',
-      ));
+      ]);
     }
 
     // Escape the ampersand if requested.
@@ -713,15 +807,11 @@ class CharacterEncoding {
       }
     }
 
-    // Attempt fast encoding
-    // @ = suppress deprecation warning. Alternate implementation is already provided for when it is removed.
-    if (function_exists('mb_convert_encoding')) {
-      if ($params['from_encoding']) {
-        $output = @mb_convert_encoding($output, 'HTML-ENTITIES', 'UTF-8');
-      }
-      else {
-        $output = @mb_convert_encoding($output, 'HTML-ENTITIES');
-      }
+    // Convert every non-ASCII character to a decimal reference. The named
+    // entities mbstring's deprecated 'HTML-ENTITIES' target used to emit are
+    // restored by the entity-map passes below, which name each of them.
+    if (function_exists('mb_encode_numericentity')) {
+      $output = mb_encode_numericentity($output, [0x80, 0x10FFFF, 0, 0x1FFFFF], $params['from_encoding'] ? 'UTF-8' : NULL);
     }
     else {
       // Convert non-ASCII characters to entities.
@@ -734,7 +824,7 @@ class CharacterEncoding {
     if (!$params['entities_prefer_numeric'] && strpos($output, '&#') !== FALSE) {
       $output = strtr($output, self::getEntitiesMap(NULL, self::MODE_ENTITYDEC_ENTITYNAME));
       if (strpos($output, '&#x') !== FALSE) {
-        $output = preg_replace_callback('@&#x([^;]*);@s', function ($matches) {
+        $output = (string) preg_replace_callback('@&#x([^;]*);@s', function ($matches) {
           return '&#x' . strtoupper(ltrim($matches[1], '0')) . ';';
         }, $output);
         $output = strtr($output, self::getEntitiesMap(NULL, self::MODE_ENTITYHEX_ENTITYNAME));
@@ -748,18 +838,18 @@ class CharacterEncoding {
 
       case 'remove':
         $output = strip_tags($output);
-        $output = strtr($output, array(
+        $output = strtr($output, [
           '<' => '&lt;',
           '>' => '&gt;',
-        ));
+        ]);
         break;
 
       case 'disable':
       default:
-        $output = strtr($output, array(
+        $output = strtr($output, [
           '<' => '&lt;',
           '>' => '&gt;',
-        ));
+        ]);
     }
 
     // Convert to numeric when necessary.
@@ -769,9 +859,8 @@ class CharacterEncoding {
       }
     }
 
-    // Transliterate any remaining entities to ASCII when possible.
-    // This MUST happen after the numeric entity conversion.
-    //   (i.e., remove accents)
+    // Transliterate any remaining entities to ASCII when possible (i.e.,
+    // remove accents). This MUST happen after the numeric entity conversion.
     if ($params['transliterate_ascii'] && strpos($output, '&') !== FALSE) {
       if (strpos($output, '&#') !== FALSE) {
         $output = strtr($output, self::getEntitiesMap('TRANSLITERATE_ASCII', self::MODE_ENTITYDEC_NAME));
@@ -801,23 +890,28 @@ class CharacterEncoding {
       switch ($purify) {
         case 'filter_xss':
           // https://api.drupal.org/api/drupal/includes%21common.inc/function/filter_xss/7.x
-          if (is_array($params['tags_allowed'])) {
-            $output = filter_xss($output, $params['tags_allowed']);
+          if (function_exists('filter_xss')) {
+            if (is_array($params['tags_allowed'])) {
+              $output = \filter_xss($output, $params['tags_allowed']);
+            }
+            else {
+              $output = \filter_xss($output);
+            }
+            $purified = TRUE;
           }
-          else {
-            $output = filter_xss($output);
-          }
-          $purified = TRUE;
           break;
+
         case 'htmlpurifier':
           // http://htmlpurifier.org/live/configdoc/plain.html
-          $config = HTMLPurifier_Config::createDefault();
-          if (is_array($params['tags_allowed'])) {
-            $config->set('HTML.AllowedElements', join(',', $params['tags_allowed']));
+          if (class_exists('HTMLPurifier') && class_exists('HTMLPurifier_Config')) {
+            $config = \HTMLPurifier_Config::createDefault();
+            if (is_array($params['tags_allowed'])) {
+              $config->set('HTML.AllowedElements', implode(',', $params['tags_allowed']));
+            }
+            $purifier = new \HTMLPurifier($config);
+            $output = $purifier->purify($output);
+            $purified = TRUE;
           }
-          $purifier = new HTMLPurifier($config);
-          $output = $purifier->purify($output);
-          $purified = TRUE;
           break;
       }
       if (!$purified) {
@@ -825,27 +919,45 @@ class CharacterEncoding {
       }
     }
 
-    // Escape all entities
+    // Escape all entities.
     if ($params['escape_entities']) {
       $output = str_replace('&', '&amp;', $output);
     }
 
     // Potential strategy that disables all tags:
-    //     $output = htmlentities($output, ENT_SUBSTITUTE | $params['quotes']
-    //       | $params['doctype'], $params['charset'], $params['double_encode']);
-
+    // $output = htmlentities($output, ENT_SUBSTITUTE | $params['quotes']
+    // | $params['doctype'], $params['charset'], $params['double_encode']).
     return $output;
   }
 
-  static public function toHtmlSafe($source, $set_conf = NULL) {
-    static $conf = array(
-    'default_settings' => 'user input',
-    );
+  /**
+   * Converts user-supplied text to purified HTML.
+   *
+   * Runs toHtml() with the 'user input' preset, so filter_xss() or
+   * HTMLPurifier must be available. The configuration persists for the rest
+   * of the request.
+   *
+   * @param mixed $source
+   *   The text to convert. Anything other than a string is returned as is.
+   * @param array<string, mixed>|false|null $set_conf
+   *   NULL keeps the current configuration, FALSE resets it to the preset,
+   *   and an array of toHtml() options is merged into the current one.
+   *
+   * @return mixed
+   *   The purified string, or $source unchanged when it is not a string.
+   *
+   * @throws \InvalidArgumentException
+   *   When no purifier is available.
+   */
+  public static function toHtmlSafe(mixed $source, array|false|null $set_conf = NULL): mixed {
+    static $conf = [
+      'default_settings' => 'user input',
+    ];
     if (isset($set_conf)) {
       if ($set_conf === FALSE) {
-        $conf = array(
+        $conf = [
           'default_settings' => 'user input',
-        );
+        ];
       }
       elseif (is_array($set_conf)) {
         $conf = array_replace($conf, $set_conf);
@@ -854,12 +966,30 @@ class CharacterEncoding {
     return self::toHtml($source, $conf);
   }
 
-  static public function toEncoding($source, $from_encoding, $to_encoding) {
+  /**
+   * Converts a string between character encodings.
+   *
+   * Uses iconv() when available and mbstring otherwise.
+   *
+   * @param string $source
+   *   The text to convert.
+   * @param string $from_encoding
+   *   The encoding $source is in, e.g. 'ISO-8859-1'.
+   * @param string $to_encoding
+   *   The encoding to convert to, e.g. 'UTF-8'.
+   *
+   * @return string|false
+   *   The converted text, or FALSE when the conversion fails.
+   *
+   * @throws \ErrorException
+   *   When neither iconv nor mbstring is installed.
+   */
+  public static function toEncoding(string $source, string $from_encoding, string $to_encoding): string|false {
     if (function_exists('iconv')) {
       return iconv($from_encoding, $to_encoding, $source);
     }
     if (function_exists('mb_convert_encoding')) {
-      // @ = suppress the deprecation warning.
+      // @ = suppress the warning for an unknown encoding.
       return @mb_convert_encoding($source, $to_encoding, $from_encoding);
     }
 
