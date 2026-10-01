@@ -230,6 +230,8 @@ interface QuipXmlElementInterface extends \Countable, \Stringable, \Traversable 
    *
    * @throws \LogicException
    *   When writing markup into an attribute node.
+   *
+   * @phpstan-return ($content is null|\QuipXml\Xml\QuipXmlFormatter ? string : static)
    */
   public function html(string|\SimpleXMLElement|\DOMNode|QuipXmlFormatter|null $content = NULL): string|static;
 
@@ -332,6 +334,8 @@ interface QuipXmlElementInterface extends \Countable, \Stringable, \Traversable 
    * @return string|static
    *   The text, with markup removed and entities kept, when reading; the
    *   same node or set when writing.
+   *
+   * @phpstan-return ($content is null ? string : static)
    */
   public function text(string|int|float|null $content = NULL): string|static;
 

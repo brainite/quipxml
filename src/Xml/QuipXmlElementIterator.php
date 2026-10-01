@@ -309,6 +309,8 @@ class QuipXmlElementIterator extends \IteratorIterator implements QuipXmlElement
 
   /**
    * {@inheritdoc}
+   *
+   * @phpstan-return ($content is null|\QuipXml\Xml\QuipXmlFormatter ? string : static)
    */
   public function html(string|\SimpleXMLElement|\DOMNode|QuipXmlFormatter|null $content = NULL): string|static {
     if ($content === NULL || $content instanceof QuipXmlFormatter) {
@@ -366,6 +368,8 @@ class QuipXmlElementIterator extends \IteratorIterator implements QuipXmlElement
 
   /**
    * {@inheritdoc}
+   *
+   * @phpstan-return ($content is null ? string : static)
    */
   public function text(string|int|float|null $content = NULL): string|static {
     if ($content === NULL) {
