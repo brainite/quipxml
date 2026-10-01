@@ -77,7 +77,7 @@ class Quip {
    *   The root node.
    *
    * @throws \InvalidArgumentException
-   *   When the source is empty.
+   *   When the source, or the file it names, is empty.
    * @throws \ErrorException
    *   When neither parser can read the source.
    */
@@ -118,6 +118,10 @@ class Quip {
       }
       catch (\Exception) {
         $data = strtr($data_is_url ? (string) file_get_contents($source) : $source, ['&nbsp;' => '&#xA0;']);
+        // An empty file reaches here, as SimpleXML cannot parse it either.
+        if (trim($data) === '') {
+          throw new \InvalidArgumentException('Quip cannot load an empty document.');
+        }
         return self::loadHtml($data, $options, $ns, $is_prefix, $quip_options);
       }
     }

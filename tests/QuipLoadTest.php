@@ -183,6 +183,15 @@ final class QuipLoadTest extends TestCase {
   }
 
   /**
+   * An empty file is refused like an empty string.
+   */
+  public function testEmptyFileThrows(): void {
+    $this->expectException(\InvalidArgumentException::class);
+    $this->expectExceptionMessage('Quip cannot load an empty document.');
+    Quip::load(__DIR__ . '/Resources/Empty.xml', 0, TRUE);
+  }
+
+  /**
    * A SimpleXMLElement is wrapped without copying its document.
    */
   public function testLoadsSimpleXmlElementBySharingItsDocument(): void {
