@@ -9,39 +9,79 @@ Quip attempts to provide lightweight extensions to SimpleXML to facilitate
 cleaner code without imposing JavaScript conventions on a PHP project.
 The end result is fast and easy to use.
 
+Requires PHP 8.3 or later.
+
 Basic Usage
 -----------
 
 ```` php
+use QuipXml\Quip;
+
 // The 'load' factory method aligns with SimpleXml constructor arguments.
+// Markup that is not well-formed XML is read with the HTML parser.
 $quip = Quip::load($xml_path, 0, TRUE);
 $quip = Quip::load($xml_string);
 
 // jQuery method names are used where appropriate.
 $html = $quip->html();
 
-// jQuery method names are adjusted when there is a keyword conflict.
-$quip->xparent();
-    
+// Queries carry a 'q' prefix: SimpleXMLElement::xpath() returns an array,
+// and an override returning anything else is not legal PHP.
+$quip->qxparent();
+$quip->qxprev();
+
 // While jQuery syntax is wonderful, you also get PHP advantages:
 //  1. xpath
 //  2. access children like properties
 //  3. use foreach loops
-$ul = $quip->xpath("//ul")->eq(0);
+$ul = $quip->qxpath("//ul")->eq(0);
 $ul->li->after('<li>New bullet.</li>');
-foreach ($quip->xpath("//li")->eq(1) as $li) {
+foreach ($quip->qxpath("//li") as $li) {
 }
 
 // For advanced operations, just like in jQuery, you can access the DOMNode for a given XML node.
 $el = $ul->dom();
 ````
 
-HHVM Limitations for SimpleXML
-------------------------------
+Nodes and sets
+--------------
 
-Effective 2014-03-24 (confirmed on travis-ci), you cannot use the magic self-reference on SimpleXml elements. This code will not work:
-```` php
-$sxml = simplexml_load_file('example.xml');
-$sxml->original[0] = $expected;
+`qxpath()` returns a `QuipXmlElementIterator` holding every match, or an
+empty `QuipXmlElement` when nothing matched. Both implement
+`QuipXmlElementInterface`, so a chain does not need to know how many nodes
+it holds:
+
+- Verbs that change the document (`after`, `before`, `append`, `wrap`,
+  `wrapInner`, `unwrap`, `remove`, `setTag`, `addChild`, `addAttribute`, and
+  `html()` or `text()` given content) apply to every node.
+- Getters (`html()`, `text()`, `htmlOuter()`, `asXML()`, `getName()`) read
+  the first node. Casting a set to a string concatenates every node's text,
+  and `getNamespaces()` and `getDocNamespaces()` merge every node's.
+- `children()` and `attributes()` flatten every node's children or
+  attributes into one set.
+- An empty result casts to `FALSE`, iterates nothing, and ignores every verb,
+  so a chain over a missing node needs no guard.
+
+An attribute node (from `attributes()` or `qxpath('//@name')`) reads and
+writes its value through `text()` and is deleted by `remove()`; the
+structural verbs throw a `\LogicException` on it.
+
+Upgrading from 0.x
+------------------
+
+- `xpath()`, `xparent()` and `xprev()` throw a `\RuntimeException`; call
+  `qxpath()`, `qxparent()` and `qxprev()` (available since 0.4).
+- Parameters and return values are typed, and `remove()` returns a bool on a
+  set as well as on one node.
+- `before()`, `after()` and `append()` work on an element with no children or
+  attributes, and `setTag()` keeps an empty element well formed.
+
+Development
+-----------
+
+```` sh
+composer install
+composer lint      # PHP_CodeSniffer, Drupal standard
+composer analyse   # PHPStan level 8
+composer test      # PHPUnit; `vendor/bin/phpunit --group benchmark` for the memory benchmark
 ````
-Update: This was corrected on HHVM 3 (confirmed on travis-ci on 2014-05-30).

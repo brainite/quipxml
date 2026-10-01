@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * This file is part of the QuipXml package.
  *
@@ -12,20 +14,61 @@
 namespace QuipXml\Encoding;
 
 /**
+ * Converts text to HTML-safe character references and between encodings.
  *
+ * The entity maps built here translate between code points, decimal and
+ * hexadecimal character references, HTML entity names and ASCII
+ * transliterations; toHtml() strings those maps together into a configurable
+ * pipeline.
  */
 class CharacterEncoding {
+
+  /**
+   * Map mode: code point => entity name (`233 => 'eacute'`).
+   */
   const MODE_ORDINAL_NAME = 1;
+
+  /**
+   * Map mode: decimal reference => named entity (`'&#233;' => '&eacute;'`).
+   */
   const MODE_ENTITYDEC_ENTITYNAME = 2;
+
+  /**
+   * Map mode: decimal reference => bare value (`'&#233;' => 'eacute'`).
+   */
   const MODE_ENTITYDEC_NAME = 5;
+
+  /**
+   * Map mode: named entity => decimal reference (`'&eacute;' => '&#233;'`).
+   */
   const MODE_ENTITYNAME_ENTITYDEC = 4;
+
+  /**
+   * Map mode: hex reference => named entity (`'&#xe9;' => '&eacute;'`).
+   */
   const MODE_ENTITYHEX_ENTITYNAME = 3;
+
+  /**
+   * Map mode: bare value => decimal reference (`'eacute' => '&#233;'`).
+   */
   const MODE_CHAR_ENTITYDEC = 6;
 
   /**
+   * Builds a translation map from one or more named entity sets.
    *
+   * @param string|string[]|null $entitySets
+   *   The set id or ids to merge, case-insensitive: 'HTMLLAT1', 'HTMLSYMBOL',
+   *   'HTMLSPECIAL', 'ISO-8859-1', 'HTML5' or 'TRANSLITERATE_ASCII'. Where
+   *   sets share a code point, the earlier set wins. Empty selects the four
+   *   HTML 4 / ISO-8859-1 sets.
+   * @param int $mode
+   *   One of the MODE_* constants, choosing the key and value shape.
+   *
+   * @return array<int|string, string>
+   *   The map, ready for strtr() in every mode but MODE_ORDINAL_NAME, which
+   *   is keyed by code point.
    */
-  public static function getEntitiesMap($entitySets = NULL, $mode = self::MODE_ORDINAL_NAME) {
+  public static function getEntitiesMap(array|string|null $entitySets = NULL, int $mode = self::MODE_ORDINAL_NAME): array {
     $entitySets = (array) $entitySets;
     if (empty($entitySets)) {
       $entitySets = [
@@ -429,15 +472,15 @@ class CharacterEncoding {
         254 => 'thorn',
         255 => 'yuml',
       ],
-      // Iconv underperformed for transliteration:
-      //   https://stackoverflow.com/questions/13614622/transliterate-any-convertible-utf8-char-into-ascii-equivalent
-      //   'Kaloúdēs' became 'Kalo?d?s'
+      // Iconv underperformed for transliteration (see
+      // https://stackoverflow.com/questions/13614622/transliterate-any-convertible-utf8-char-into-ascii-equivalent):
+      // 'Kaloúdēs' became 'Kalo?d?s'.
       // Thus, building a custom character reference.
-      // Need to add extended Latin:
-      //   https://www.w3schools.com/charsets/ref_utf_latin_extended_a.asp
-      //   https://www.w3schools.com/charsets/ref_utf_latin_extended_b.asp
-      //   https://www.w3schools.com/charsets/ref_utf_letterlike.asp
-      //   and consider: https://plato.stanford.edu/symbols/entities.html
+      // Need to add extended Latin from
+      // https://www.w3schools.com/charsets/ref_utf_latin_extended_a.asp,
+      // https://www.w3schools.com/charsets/ref_utf_latin_extended_b.asp and
+      // https://www.w3schools.com/charsets/ref_utf_letterlike.asp, and consider
+      // https://plato.stanford.edu/symbols/entities.html.
       'TRANSLITERATE_ASCII' => [
         145 => '\'',
         146 => '\'',
@@ -535,7 +578,7 @@ class CharacterEncoding {
     // Build the list of entities.
     $ordinals = [];
     foreach ($entitySets as $id) {
-      $id = strtoupper($id);
+      $id = strtoupper((string) $id);
       if (isset($charsets[$id])) {
         $ordinals = array_replace($charsets[$id], $ordinals);
       }
@@ -585,9 +628,53 @@ class CharacterEncoding {
   }
 
   /**
+   * Converts a string to HTML with configurable entity handling.
    *
+   * Non-ASCII characters always leave as character references. By default
+   * those are named entities wherever the HTML 4 / ISO-8859-1 sets name them
+   * and decimal references otherwise; carriage returns are dropped and
+   * markup passes through untouched.
+   *
+   * @param mixed $source
+   *   The text to convert. Anything other than a string is returned as is.
+   * @param mixed $params
+   *   A preset name, or an array of options (anything else is cast to an
+   *   array). The presets, also selectable through the 'default_settings'
+   *   option, are:
+   *   - 'ascii': from_encoding 'UTF-8' (aggressive), numeric entities and
+   *     ASCII transliteration of accented letters and typographic
+   *     punctuation.
+   *   - 'user input': purify through filter_xss() or HTMLPurifier.
+   *   The options, with their defaults:
+   *   - from_encoding (NULL): the source charset. 'UTF-8' decodes multibyte
+   *     sequences to numeric references itself; any other charset is
+   *     converted to UTF-8 through toEncoding() first.
+   *   - from_encoding_aggressive (FALSE): with 'UTF-8', also turn any
+   *     remaining 0x80-0x9F byte into a numeric reference.
+   *   - transliterate_ascii (FALSE): replace characters that have a plain
+   *     ASCII equivalent (é => e, — => -); forces entities_prefer_numeric.
+   *   - entities_prefer_numeric (FALSE): emit `&#233;` rather than
+   *     `&eacute;`.
+   *   - remove_carriage_return (TRUE): strip "\r".
+   *   - escape_ampersand (FALSE): escape every `&` before conversion.
+   *   - escape_ampersand_selective (FALSE): escape each `&` that does not
+   *     start something shaped like an entity (up to ten characters, then
+   *     `;`).
+   *   - escape_entities (FALSE): escape every `&` of the final output.
+   *   - tags ('ignore'): 'ignore' leaves markup alone, 'remove' strips tags
+   *     and escapes stray angle brackets, anything else ('disable') escapes
+   *     every angle bracket.
+   *   - tags_allowed (NULL): the element names the purifier keeps.
+   *   - purify (FALSE): TRUE picks filter_xss() or HTMLPurifier, whichever
+   *     exists; 'filter_xss' or 'htmlpurifier' names one.
+   *
+   * @return mixed
+   *   The converted string, or $source unchanged when it is not a string.
+   *
+   * @throws \InvalidArgumentException
+   *   When purification is requested and no matching purifier exists.
    */
-  public static function toHtml($source, $params = NULL) {
+  public static function toHtml(mixed $source, mixed $params = NULL): mixed {
     if (!is_string($source)) {
       return $source;
     }
@@ -642,11 +729,8 @@ class CharacterEncoding {
       'tags' => 'ignore',
       'tags_allowed' => NULL,
       'purify' => FALSE,
-      // Potential params:
-      //       'quotes' => ENT_NOQUOTES,
-      //       // doctype = ENT_HTML5, ENT_XML1, ENT_HTML401
-      //       'doctype' => ENT_XHTML,
-      //       'allow_tags' => TRUE,.
+      // Potential params: 'quotes' => ENT_NOQUOTES, 'doctype' => ENT_XHTML
+      // (or ENT_HTML5, ENT_XML1, ENT_HTML401), 'allow_tags' => TRUE.
     ], $params);
 
     // Force configurations.
@@ -657,29 +741,27 @@ class CharacterEncoding {
     // If a source charset is provided, then convert to UTF-8.
     if (isset($params['from_encoding'])) {
       if ($params['from_encoding'] === 'UTF-8') {
-        /**
-         * Info on entity translations:
-         * @link http://www.w3.org/TR/xhtml-modularization/dtd_module_defs.html#a_xhtml_character_entities
-         * Most of the multibyte problems can be addressed by casting the character set out of UTF-8!
-         */
+        // Info on entity translations:
+        // http://www.w3.org/TR/xhtml-modularization/dtd_module_defs.html#a_xhtml_character_entities
+        // Most of the multibyte problems can be addressed by casting the
+        // character set out of UTF-8!
         if (preg_match('/[\194-\226]/', $output)) {
-          // utf8_decode breaks things it does not understand, so we use a fancier tactic.
-          // $data = utf8_decode($data);
-
-          /* Only do the slow convert if there are 8-bit characters */
-          /* avoid using 0xA0 (\240) in ereg ranges. RH73 does not like that */
+          // utf8_decode breaks things it does not understand, so we use a
+          // fancier tactic.
+          // Only do the slow convert if there are 8-bit characters.
+          // Avoid using 0xA0 (\240) in ereg ranges. RH73 does not like that.
           if (!preg_match("/[\200-\237\241-\377]/", $output)) {
           }
           else {
             // Decode three byte unicode characters.
-            $output = preg_replace_callback("/([\340-\357])([\200-\277])([\200-\277])/", function ($matches) {
+            $output = (string) preg_replace_callback("/([\340-\357])([\200-\277])([\200-\277])/", function ($matches) {
               return '&#'
                 . ((ord($matches[1]) - 224) * 4096
                   + (ord($matches[2]) - 128) * 64 + (ord($matches[3]) - 128))
                 . ';';
             }, $output);
             // Decode two byte unicode characters.
-            $output = preg_replace_callback("/([\300-\337])([\200-\277])/", function ($matches) {
+            $output = (string) preg_replace_callback("/([\300-\337])([\200-\277])/", function ($matches) {
               return '&#'
                 . ((ord($matches[1]) - 192) * 64 + (ord($matches[2]) - 128))
                 . ';';
@@ -689,7 +771,7 @@ class CharacterEncoding {
           if ($params['from_encoding_aggressive']) {
             // Unicode cleanup. Remove latin-supplement.
             // https://www.charbase.com/block/latin-supplement
-            $output = preg_replace_callback("@[\x80-\x9F]@", function ($matches) {
+            $output = (string) preg_replace_callback("@[\x80-\x9F]@", function ($matches) {
               return '&#' . ord($matches[0]) . ';';
             }, $output);
           }
@@ -697,7 +779,7 @@ class CharacterEncoding {
 
       }
       else {
-        $output = self::toEncoding($output, $params['from_encoding'], 'UTF-8');
+        $output = (string) self::toEncoding($output, (string) $params['from_encoding'], 'UTF-8');
       }
     }
 
@@ -725,15 +807,11 @@ class CharacterEncoding {
       }
     }
 
-    // Attempt fast encoding.
-    // @ = suppress deprecation warning. Alternate implementation is already provided for when it is removed.
-    if (function_exists('mb_convert_encoding')) {
-      if ($params['from_encoding']) {
-        $output = @mb_convert_encoding($output, 'HTML-ENTITIES', 'UTF-8');
-      }
-      else {
-        $output = @mb_convert_encoding($output, 'HTML-ENTITIES');
-      }
+    // Convert every non-ASCII character to a decimal reference. The named
+    // entities mbstring's deprecated 'HTML-ENTITIES' target used to emit are
+    // restored by the entity-map passes below, which name each of them.
+    if (function_exists('mb_encode_numericentity')) {
+      $output = mb_encode_numericentity($output, [0x80, 0x10FFFF, 0, 0x1FFFFF], $params['from_encoding'] ? 'UTF-8' : NULL);
     }
     else {
       // Convert non-ASCII characters to entities.
@@ -746,7 +824,7 @@ class CharacterEncoding {
     if (!$params['entities_prefer_numeric'] && strpos($output, '&#') !== FALSE) {
       $output = strtr($output, self::getEntitiesMap(NULL, self::MODE_ENTITYDEC_ENTITYNAME));
       if (strpos($output, '&#x') !== FALSE) {
-        $output = preg_replace_callback('@&#x([^;]*);@s', function ($matches) {
+        $output = (string) preg_replace_callback('@&#x([^;]*);@s', function ($matches) {
           return '&#x' . strtoupper(ltrim($matches[1], '0')) . ';';
         }, $output);
         $output = strtr($output, self::getEntitiesMap(NULL, self::MODE_ENTITYHEX_ENTITYNAME));
@@ -781,9 +859,8 @@ class CharacterEncoding {
       }
     }
 
-    // Transliterate any remaining entities to ASCII when possible.
-    // This MUST happen after the numeric entity conversion.
-    //   (i.e., remove accents)
+    // Transliterate any remaining entities to ASCII when possible (i.e.,
+    // remove accents). This MUST happen after the numeric entity conversion.
     if ($params['transliterate_ascii'] && strpos($output, '&') !== FALSE) {
       if (strpos($output, '&#') !== FALSE) {
         $output = strtr($output, self::getEntitiesMap('TRANSLITERATE_ASCII', self::MODE_ENTITYDEC_NAME));
@@ -813,24 +890,28 @@ class CharacterEncoding {
       switch ($purify) {
         case 'filter_xss':
           // https://api.drupal.org/api/drupal/includes%21common.inc/function/filter_xss/7.x
-          if (is_array($params['tags_allowed'])) {
-            $output = filter_xss($output, $params['tags_allowed']);
+          if (function_exists('filter_xss')) {
+            if (is_array($params['tags_allowed'])) {
+              $output = \filter_xss($output, $params['tags_allowed']);
+            }
+            else {
+              $output = \filter_xss($output);
+            }
+            $purified = TRUE;
           }
-          else {
-            $output = filter_xss($output);
-          }
-          $purified = TRUE;
           break;
 
         case 'htmlpurifier':
           // http://htmlpurifier.org/live/configdoc/plain.html
-          $config = HTMLPurifier_Config::createDefault();
-          if (is_array($params['tags_allowed'])) {
-            $config->set('HTML.AllowedElements', join(',', $params['tags_allowed']));
+          if (class_exists('HTMLPurifier') && class_exists('HTMLPurifier_Config')) {
+            $config = \HTMLPurifier_Config::createDefault();
+            if (is_array($params['tags_allowed'])) {
+              $config->set('HTML.AllowedElements', implode(',', $params['tags_allowed']));
+            }
+            $purifier = new \HTMLPurifier($config);
+            $output = $purifier->purify($output);
+            $purified = TRUE;
           }
-          $purifier = new HTMLPurifier($config);
-          $output = $purifier->purify($output);
-          $purified = TRUE;
           break;
       }
       if (!$purified) {
@@ -844,16 +925,31 @@ class CharacterEncoding {
     }
 
     // Potential strategy that disables all tags:
-    //     $output = htmlentities($output, ENT_SUBSTITUTE | $params['quotes']
-    //       | $params['doctype'], $params['charset'], $params['double_encode']);.
-
+    // $output = htmlentities($output, ENT_SUBSTITUTE | $params['quotes']
+    // | $params['doctype'], $params['charset'], $params['double_encode']).
     return $output;
   }
 
   /**
+   * Converts user-supplied text to purified HTML.
    *
+   * Runs toHtml() with the 'user input' preset, so filter_xss() or
+   * HTMLPurifier must be available. The configuration persists for the rest
+   * of the request.
+   *
+   * @param mixed $source
+   *   The text to convert. Anything other than a string is returned as is.
+   * @param array<string, mixed>|false|null $set_conf
+   *   NULL keeps the current configuration, FALSE resets it to the preset,
+   *   and an array of toHtml() options is merged into the current one.
+   *
+   * @return mixed
+   *   The purified string, or $source unchanged when it is not a string.
+   *
+   * @throws \InvalidArgumentException
+   *   When no purifier is available.
    */
-  public static function toHtmlSafe($source, $set_conf = NULL) {
+  public static function toHtmlSafe(mixed $source, array|false|null $set_conf = NULL): mixed {
     static $conf = [
       'default_settings' => 'user input',
     ];
@@ -871,14 +967,29 @@ class CharacterEncoding {
   }
 
   /**
+   * Converts a string between character encodings.
    *
+   * Uses iconv() when available and mbstring otherwise.
+   *
+   * @param string $source
+   *   The text to convert.
+   * @param string $from_encoding
+   *   The encoding $source is in, e.g. 'ISO-8859-1'.
+   * @param string $to_encoding
+   *   The encoding to convert to, e.g. 'UTF-8'.
+   *
+   * @return string|false
+   *   The converted text, or FALSE when the conversion fails.
+   *
+   * @throws \ErrorException
+   *   When neither iconv nor mbstring is installed.
    */
-  public static function toEncoding($source, $from_encoding, $to_encoding) {
+  public static function toEncoding(string $source, string $from_encoding, string $to_encoding): string|false {
     if (function_exists('iconv')) {
       return iconv($from_encoding, $to_encoding, $source);
     }
     if (function_exists('mb_convert_encoding')) {
-      // @ = suppress the deprecation warning.
+      // @ = suppress the warning for an unknown encoding.
       return @mb_convert_encoding($source, $to_encoding, $from_encoding);
     }
 

@@ -1,16 +1,22 @@
 <?php
 
+declare(strict_types=1);
+
 namespace QuipXml\Encoding;
 
 /**
- *
+ * The HTML5 named character references.
  */
 class Html5Entities {
 
   /**
+   * Lists the HTML5 named character references.
    *
+   * @return array<string, int>
+   *   Code points keyed by entity name, without the `&` and `;`. Names are
+   *   case-sensitive, and several names may share one code point.
    */
-  public static function getNamedEntities() {
+  public static function getNamedEntities(): array {
     return [
       'Tab' => 9,
       'NewLine' => 10,

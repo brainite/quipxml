@@ -9,48 +9,43 @@
  * file that was distributed with this source code.
  */
 
+declare(strict_types=1);
+
 namespace QuipXml\Tests;
 
+use PHPUnit\Framework\Attributes\CoversNothing;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 use QuipXml\Quip;
 
 /**
- *
+ * Documents the memory each query result holds; excluded from the default run.
  */
-class PerformanceTest extends TestCase {
+#[CoversNothing]
+#[Group('benchmark')]
+final class PerformanceTest extends TestCase {
 
   /**
-   *
+   * Measures the memory a set of several nodes and a set of one node hold.
    */
-  public function testMultipleReferences() {
-    // Document how much memory is used when additional iterators are instantiated.
-    $quip = Quip::load(__DIR__ . '/Resources/XmlBasicList.xml', 0, TRUE);
-    $count = 1000;
-    $v = [];
-    $pre = memory_get_usage(FALSE);
-    for ($i = 0; $i < $count; ++$i) {
-      $v[] = $quip->qxpath("//item");
-    }
-    $post = memory_get_usage(FALSE);
-    $memory_per_reference = round(($post - $pre) / $count);
-    // This test is targeted to PHP 5.3
-    // 5.4 and 5.5 both use 25% less memory.
-    $this->assertLessThanOrEqual(21400, $memory_per_reference, "Early tests only show 21K per additional iterator in context.");
+  public function testMultipleReferences(): void {
+    $this->assertLessThanOrEqual(21400, $this->bytesPerQuery('//item'), 'A five-node set should stay under 21 KB.');
+    $this->assertLessThanOrEqual(2250, $this->bytesPerQuery('//original'), 'A one-node set should stay under 2.2 KB.');
+  }
 
-    // Document how much memory is used when additional iterators are instantiated.
+  /**
+   * Returns the average memory a held query result costs.
+   */
+  private function bytesPerQuery(string $path): float {
     $quip = Quip::load(__DIR__ . '/Resources/XmlBasicList.xml', 0, TRUE);
     $count = 1000;
-    $v = [];
-    $pre = memory_get_usage(FALSE);
+    $held = [];
+    $before = memory_get_usage();
     for ($i = 0; $i < $count; ++$i) {
-      $v[] = $quip->qxpath("//original");
+      $held[] = $quip->qxpath($path);
     }
-    $post = memory_get_usage(FALSE);
-    $memory_per_reference = round(($post - $pre) / $count);
-    // var_dump($memory_per_reference);
-    // This test is targeted to PHP 5.3
-    // 5.4 and 5.5 both use 25% less memory.
-    $this->assertLessThanOrEqual(2250, $memory_per_reference, "Early tests only show 2.2K per additional 1-item iterator in context.");
+    $this->assertCount($count, $held);
+    return round((memory_get_usage() - $before) / $count);
   }
 
 }

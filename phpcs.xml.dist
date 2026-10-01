@@ -10,7 +10,11 @@
   <arg value="sp"/>
   <arg value="n"/>
 
-  <rule ref="Drupal"/>
+  <!-- Every file opens with the package's MIT license block, which the
+       Drupal standard reads as a file doc comment before the namespace. -->
+  <rule ref="Drupal">
+    <exclude name="Drupal.Commenting.FileComment.NamespaceNoFileDoc"/>
+  </rule>
   <rule ref="DrupalPractice"/>
   <rule ref="Generic.PHP.RequireStrictTypes"/>
 
