@@ -23,7 +23,7 @@ class QuipCalendarIcsFormatter extends QuipXmlFormatter {
   }
 
   protected function &fixDtEnd(&$xml) {
-    foreach ($xml->xpath('//vevent') as $vevent) {
+    foreach ($xml->qxpath('//vevent') as $vevent) {
       $dtstart = (string) $vevent->dtstart;
       $dtend = (string) $vevent->dtend;
       if (empty($dtstart)) {
@@ -40,7 +40,7 @@ class QuipCalendarIcsFormatter extends QuipXmlFormatter {
   protected function &fixUid(&$xml) {
     if ($this->settings['fix_uid_length']) {
       // Limit uid length to 71 (75-char line minus "UID:")
-      $uid = $xml->xpath('/iCalendar/vcalendar/uid');
+      $uid = $xml->qxpath('/iCalendar/vcalendar/uid');
       $val = $uid->html();
       if (strlen($val) > 71) {
         if (strpos($val, '@') === FALSE) {
@@ -61,7 +61,7 @@ class QuipCalendarIcsFormatter extends QuipXmlFormatter {
   protected function getDateTime($value, &$xml) {
     // Get the timezone.
     $tz = NULL;
-    $tz_name = trim($xml->xpath('//x-wr-timezone')->html());
+    $tz_name = trim($xml->qxpath('//x-wr-timezone')->html());
     if ($tz_name !== '') {
       $tz = new \DateTimeZone($tz_name);
       $utc = new \DateTimeZone("UTC");

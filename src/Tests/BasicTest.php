@@ -21,9 +21,9 @@ class BasicTest extends \PHPUnit\Framework\TestCase {
   public function testCount() {
     $quip = Quip::load(__DIR__ . '/Resources/XmlBasicList.xml', 0, TRUE);
 
-    $this->assertEquals(sizeof($quip->xpath('//original')), 1);
-    $this->assertEquals(sizeof($quip->xpath('//original/x')), 0);
-    $this->assertEquals(sizeof($quip->xpath('//original/x[1]')), 0);
+    $this->assertEquals(sizeof($quip->qxpath('//original')), 1);
+    $this->assertEquals(sizeof($quip->qxpath('//original/x')), 0);
+    $this->assertEquals(sizeof($quip->qxpath('//original/x[1]')), 0);
   }
 
   public function testXmlBasicList() {
@@ -31,8 +31,8 @@ class BasicTest extends \PHPUnit\Framework\TestCase {
 
     // Test after, xparent, html and htmlOuter
     $quip = Quip::load(__DIR__ . '/Resources/XmlBasicList.xml', 0, TRUE);
-    $add = $quip->xpath("//arg[@id = 'new-content']")->html();
-    $tgt = $quip->xpath("//original//item[@class = 'target']");
+    $add = $quip->qxpath("//arg[@id = 'new-content']")->html();
+    $tgt = $quip->qxpath("//original//item[@class = 'target']");
 
     // Confirm that the $add content parses.
     $add_dom = Quip::load($add)->dom();
@@ -40,24 +40,24 @@ class BasicTest extends \PHPUnit\Framework\TestCase {
     $this->assertEquals($add_dom->ownerDocument->nodeType, XML_DOCUMENT_NODE);
 
     // Apply changes and test.
-    $actual = $tgt->after($add)->xparent()->htmlOuter($formatter);
-    $expected = $quip->xpath("//output[@method = 'after']")->html($formatter);
+    $actual = $tgt->after($add)->qxparent()->htmlOuter($formatter);
+    $expected = $quip->qxpath("//output[@method = 'after']")->html($formatter);
     $this->assertEquals($expected, $actual);
 
     // Test before, xparent, html and htmlOuter
     $quip = Quip::load(__DIR__ . '/Resources/XmlBasicList.xml', 0, TRUE);
-    $add = $quip->xpath("//arg[@id = 'new-content']")->html();
-    $tgt = $quip->xpath("//original//item[@class = 'target']");
-    $actual = $tgt->before($add)->xparent()->htmlOuter($formatter);
-    $expected = $quip->xpath("//output[@method = 'before']")->html($formatter);
+    $add = $quip->qxpath("//arg[@id = 'new-content']")->html();
+    $tgt = $quip->qxpath("//original//item[@class = 'target']");
+    $actual = $tgt->before($add)->qxparent()->htmlOuter($formatter);
+    $expected = $quip->qxpath("//output[@method = 'before']")->html($formatter);
     $this->assertEquals($expected, $actual);
 
     // Test SimpleXml traversal, before, xparent, html and htmlOuter
     $quip = Quip::load(__DIR__ . '/Resources/XmlBasicList.xml', 0, TRUE);
-    $add = $quip->xpath("//arg[@id = 'new-content']")->html();
-    $tgt = $quip->original->list->xpath("./item[@class = 'target']");
-    $actual = $tgt->before($add)->after($add)->xparent()->htmlOuter($formatter);
-    $expected = $quip->xpath("//output[@method = 'before-after']")->html($formatter);
+    $add = $quip->qxpath("//arg[@id = 'new-content']")->html();
+    $tgt = $quip->original->list->qxpath("./item[@class = 'target']");
+    $actual = $tgt->before($add)->after($add)->qxparent()->htmlOuter($formatter);
+    $expected = $quip->qxpath("//output[@method = 'before-after']")->html($formatter);
     $this->assertEquals($expected, $actual);
   }
 
@@ -66,7 +66,7 @@ class BasicTest extends \PHPUnit\Framework\TestCase {
    */
   public function testSimpleXmlLimitsHtml() {
     $quip = Quip::load(__DIR__ . '/Resources/XmlBasicList.xml', 0, TRUE);
-    $orig = $quip->xpath('//original');
+    $orig = $quip->qxpath('//original');
     $orig->x->html('1');
   }
 
@@ -75,37 +75,37 @@ class BasicTest extends \PHPUnit\Framework\TestCase {
    */
   public function testSimpleXmlLimitsText() {
     $quip = Quip::load(__DIR__ . '/Resources/XmlBasicList.xml', 0, TRUE);
-    $orig = $quip->xpath('//original');
+    $orig = $quip->qxpath('//original');
     $orig->x->text('1');
   }
 
   public function testSetNewChild() {
     $quip = Quip::load(__DIR__ . '/Resources/XmlBasicList.xml', 0, TRUE);
-    $orig = $quip->xpath('//original')->eq();
+    $orig = $quip->qxpath('//original')->eq();
     $orig->x = 1;
     $expected = $orig->html($this->formatter);
 
     $quip = Quip::load(__DIR__ . '/Resources/XmlBasicList.xml', 0, TRUE);
-    $orig = $quip->xpath('//original');
+    $orig = $quip->qxpath('//original');
     $orig->x = 1;
     $actual = $orig->html($this->formatter);
     $this->assertEquals($expected, $actual);
 
     $quip = Quip::load(__DIR__ . '/Resources/XmlBasicList.xml', 0, TRUE);
-    $orig = $quip->xpath('//original');
+    $orig = $quip->qxpath('//original');
     $orig->get('x')->text('1');
     $actual = $orig->html($this->formatter);
     $this->assertEquals($expected, $actual);
 
     $quip = Quip::load(__DIR__ . '/Resources/XmlBasicList.xml', 0, TRUE);
-    $orig = $quip->xpath('//original');
+    $orig = $quip->qxpath('//original');
     $orig->get('x')->html('1');
     $actual = $orig->html($this->formatter);
     $this->assertEquals($expected, $actual);
 
     $quip = Quip::load(__DIR__ . '/Resources/XmlBasicList.xml', 0, TRUE);
     $quip->get('//original/x[1]')->text('1');
-    $orig = $quip->xpath('//original');
+    $orig = $quip->qxpath('//original');
     $actual = $orig->html($this->formatter);
     $this->assertEquals($expected, $actual);
   }
@@ -120,25 +120,25 @@ class BasicTest extends \PHPUnit\Framework\TestCase {
       'five',
     );
     $test1 = $expected;
-    foreach ($quip->xpath('//original/list')->item as $item) {
+    foreach ($quip->qxpath('//original/list')->item as $item) {
       $this->assertEquals(array_shift($test1), trim($item));
     }
     $this->assertEmpty($test1);
 
     $test2 = $expected;
-    foreach ($quip->original->xpath('./list')->item as $item) {
+    foreach ($quip->original->qxpath('./list')->item as $item) {
       $this->assertEquals(array_shift($test2), trim($item));
     }
     $this->assertEmpty($test2);
 
     $test3 = $expected;
-    foreach ($quip->xpath('//original')->xpath('./list')->item as $item) {
+    foreach ($quip->qxpath('//original')->qxpath('./list')->item as $item) {
       $this->assertEquals(array_shift($test3), trim($item));
     }
     $this->assertEmpty($test3);
 
     $test4 = $expected;
-    foreach ($quip->xpath('//original')->list->xpath('./item') as $item) {
+    foreach ($quip->qxpath('//original')->list->qxpath('./item') as $item) {
       $this->assertEquals(array_shift($test4), trim($item));
     }
     $this->assertEmpty($test4);
@@ -161,34 +161,34 @@ class BasicTest extends \PHPUnit\Framework\TestCase {
       $this->assertTrue(FALSE, 'SimpleXml skips foreach when not found');
     }
 
-    foreach ($quip->xpath('//notfoundanywhere') as $a) {
+    foreach ($quip->qxpath('//notfoundanywhere') as $a) {
       $this->assertTrue(FALSE, 'Quip skips foreach when not found');
     }
 
-    foreach ($quip->xpath('//notfoundanywhere')->xpath('//original')->notfoundanywhere as $a) {
+    foreach ($quip->qxpath('//notfoundanywhere')->qxpath('//original')->notfoundanywhere as $a) {
       $this->assertTrue(FALSE, 'Quip skips foreach when not found');
     }
 
     $missing = $quip->notfoundanywhere;
     $this->assertFalse((bool) $missing, 'SimpleXml element not found');
-    $found = $missing->xpath('//original');
+    $found = $missing->qxpath('//original');
     $this->assertTrue((bool) $found, 'SimpleXml reference survives');
 
-    $missing = $quip->xpath('//notfoundanywhere');
+    $missing = $quip->qxpath('//notfoundanywhere');
     $this->assertFalse((bool) $missing, 'SimpleXml element not found by xpath');
-    $found = $missing->xpath('//original');
+    $found = $missing->qxpath('//original');
     $this->assertTrue((bool) $found, 'SimpleXml reference survives');
 
-    $missing = $quip->xpath('//notfoundanywhere')->xpath('//stillnotfound');
+    $missing = $quip->qxpath('//notfoundanywhere')->qxpath('//stillnotfound');
     $this->assertFalse((bool) $missing, 'SimpleXml element not found by iterator xpath');
-    $found = $missing->xpath('//original');
+    $found = $missing->qxpath('//original');
     $this->assertTrue((bool) $found, 'SimpleXml reference survives');
 
     $expected = $quip->html($this->formatter);
     $quip->notfoundanywhere->after('<div/>')->before('<div/>');
     $actual = $quip->html($this->formatter);
     $this->assertEquals($expected, $actual);
-    $quip->xpath('//notfoundanywhere')->after('<div/>')->before('<div/>');
+    $quip->qxpath('//notfoundanywhere')->after('<div/>')->before('<div/>');
     $actual = $quip->html($this->formatter);
     $this->assertEquals($expected, $actual);
   }
@@ -206,23 +206,23 @@ class BasicTest extends \PHPUnit\Framework\TestCase {
 
   public function testWrapUnwrap() {
     $quip = Quip::load(__DIR__ . '/Resources/XmlBasicList.xml', 0, TRUE);
-    $expected = $quip->xpath("//output[@method = 'list-newlist']")->html($this->formatter);
+    $expected = $quip->qxpath("//output[@method = 'list-newlist']")->html($this->formatter);
 
     $quip = Quip::load(__DIR__ . '/Resources/XmlBasicList.xml', 0, TRUE);
-    $tgt = $quip->xpath("//original//item[@class = 'target']");
-    $tgt->xparent()->wrap('<newlist/>');
+    $tgt = $quip->qxpath("//original//item[@class = 'target']");
+    $tgt->qxparent()->wrap('<newlist/>');
     $tgt->unwrap();
     $actual = $quip->original->html($this->formatter);
     $this->assertEquals($expected, $actual);
 
     $quip = Quip::load(__DIR__ . '/Resources/XmlBasicList.xml', 0, TRUE);
     $quip->original->wrapInner('<newlist />');
-    $quip->original->newlist->html($quip->xpath("//original//list")->html());
+    $quip->original->newlist->html($quip->qxpath("//original//list")->html());
     $actual = $quip->original->html($this->formatter);
     $this->assertEquals($expected, $actual);
 
     $quip = Quip::load(__DIR__ . '/Resources/XmlBasicList.xml', 0, TRUE);
-    $list = $quip->xpath("//original//item")->xparent()->wrapInner('<newlist />')->xpath("./*[1]")->unwrap();
+    $list = $quip->qxpath("//original//item")->qxparent()->wrapInner('<newlist />')->qxpath("./*[1]")->unwrap();
     $actual = $quip->original->html($this->formatter);
     $this->assertEquals($expected, $actual);
   }

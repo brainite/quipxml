@@ -19,7 +19,7 @@ class PerformanceTest extends \PHPUnit\Framework\TestCase {
     $v = array();
     $pre = memory_get_usage(FALSE);
     for ($i = 0; $i < $count; ++$i) {
-      $v[] = $quip->xpath("//item");
+      $v[] = $quip->qxpath("//item");
     }
     $post = memory_get_usage(FALSE);
     $memory_per_reference = round(($post - $pre) / $count);
@@ -33,7 +33,7 @@ class PerformanceTest extends \PHPUnit\Framework\TestCase {
     $v = array();
     $pre = memory_get_usage(FALSE);
     for ($i = 0; $i < $count; ++$i) {
-      $v[] = $quip->xpath("//original");
+      $v[] = $quip->qxpath("//original");
     }
     $post = memory_get_usage(FALSE);
     $memory_per_reference = round(($post - $pre) / $count);
